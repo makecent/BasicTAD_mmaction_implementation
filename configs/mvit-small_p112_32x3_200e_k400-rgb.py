@@ -1,7 +1,7 @@
 model = dict(
     type='Recognizer3D',
     backbone=dict(
-        type='MViT',
+        type='MViT_Q',
         arch='small',
         drop_path_rate=0.2,
         spatial_size=112,
