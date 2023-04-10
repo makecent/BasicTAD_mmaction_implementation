@@ -532,7 +532,7 @@ class MultiScaleBlock(BaseModule):
 
 
 @MODELS.register_module(force=True)
-class MViT_Q(BaseModule):
+class MViT(BaseModule):
     """Multi-scale ViT v2.
 
     A PyTorch implement of : `MViTv2: Improved Multiscale Vision Transformers

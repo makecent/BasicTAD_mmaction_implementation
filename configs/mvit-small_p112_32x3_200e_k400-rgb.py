@@ -1,7 +1,9 @@
+custom_imports = dict(imports=['my_modules'], allow_failed_imports=False)
+
 model = dict(
     type='Recognizer3D',
     backbone=dict(
-        type='MViT_Q',
+        type='MViT',    # This is NOT the original MViT in mmaction2 but a customized MViT in my_modules.backbones
         arch='small',
         drop_path_rate=0.2,
         spatial_size=112,
