@@ -26,11 +26,6 @@ model = dict(
                 dict(type='CutmixBlending', alpha=1, num_classes=400)
             ]),
         format_shape='NCTHW'),
-    init_cfg=dict(
-        type='Pretrained',
-        prefix='backbone',
-        checkpoint='https://download.openmmlab.com/mmaction/v1.0/recognition/mvit/mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb/mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb_20230201-23284ff3.pth'
-    )
 )
 
 # dataset settings
@@ -187,5 +182,5 @@ vis_backends = [dict(type='LocalVisBackend')]
 visualizer = dict(type='ActionVisualizer', vis_backends=vis_backends)
 
 log_level = 'INFO'
-load_from = None
+load_from = 'https://download.openmmlab.com/mmaction/v1.0/recognition/mvit/mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb/mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb_20230201-23284ff3.pth'
 resume = False
