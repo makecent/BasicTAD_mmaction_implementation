@@ -906,6 +906,6 @@ class MViT(BaseModule):
                     else:
                         out = patch_token
                     outs.append(out)
-        if len(outs) == 1:
+        if len(outs) == 1 and not self.output_cls_token:
             return outs[0]
         return tuple(outs)
