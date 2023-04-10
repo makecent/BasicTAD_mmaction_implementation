@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mmaction.models.utils.embed import PatchEmbed3D
+from mmaction.registry import MODELS
 from mmcv.cnn import build_activation_layer, build_norm_layer
 from mmcv.cnn.bricks import DropPath
 from mmengine.logging import MMLogger
@@ -13,9 +15,6 @@ from mmengine.model import BaseModule, ModuleList
 from mmengine.model.weight_init import trunc_normal_
 from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 from mmengine.utils import to_3tuple
-
-from mmaction.registry import MODELS
-from mmaction.models.utils.embed import PatchEmbed3D
 
 
 def resize_pos_embed(pos_embed: torch.Tensor,
@@ -125,9 +124,9 @@ def add_decomposed_rel_pos(attn: torch.Tensor,
     rel_h = torch.einsum('bythwc,hkc->bythwk', r_q, Rh)
     rel_w = torch.einsum('bythwc,wkc->bythwk', r_q, Rw)
     rel_pos_embed = (
-        rel_t[:, :, :, :, :, :, None, None] +
-        rel_h[:, :, :, :, :, None, :, None] +
-        rel_w[:, :, :, :, :, None, None, :])
+            rel_t[:, :, :, :, :, :, None, None] +
+            rel_h[:, :, :, :, :, None, :, None] +
+            rel_w[:, :, :, :, :, None, None, :])
 
     attn_map = attn[:, :, sp_idx:, sp_idx:].view(B, -1, q_t, q_h, q_w, k_t,
                                                  k_h, k_w)
@@ -283,7 +282,7 @@ class MultiScaleAttention(BaseModule):
         self.out_dims = out_dims
 
         head_dim = out_dims // num_heads
-        self.scale = head_dim**-0.5
+        self.scale = head_dim ** -0.5
 
         self.qkv = nn.Linear(in_dims, out_dims * 3, bias=qkv_bias)
         self.proj = nn.Linear(out_dims, out_dims)
@@ -428,25 +427,25 @@ class MultiScaleBlock(BaseModule):
     """
 
     def __init__(
-        self,
-        in_dims: int,
-        out_dims: int,
-        num_heads: int,
-        mlp_ratio: float = 4.0,
-        qkv_bias: bool = True,
-        drop_path: float = 0.0,
-        norm_cfg: Dict = dict(type='LN'),
-        act_cfg: Dict = dict(type='GELU'),
-        qkv_pool_kernel: Tuple = (3, 3, 3),
-        stride_q: Tuple = (1, 1, 1),
-        stride_kv: Tuple = (1, 1, 1),
-        rel_pos_embed: bool = True,
-        residual_pooling: bool = True,
-        with_cls_token: bool = True,
-        dim_mul_in_attention: bool = True,
-        input_size: Optional[Tuple[int]] = None,
-        rel_pos_zero_init: bool = False,
-        init_cfg: Optional[Dict] = None,
+            self,
+            in_dims: int,
+            out_dims: int,
+            num_heads: int,
+            mlp_ratio: float = 4.0,
+            qkv_bias: bool = True,
+            drop_path: float = 0.0,
+            norm_cfg: Dict = dict(type='LN'),
+            act_cfg: Dict = dict(type='GELU'),
+            qkv_pool_kernel: Tuple = (3, 3, 3),
+            stride_q: Tuple = (1, 1, 1),
+            stride_kv: Tuple = (1, 1, 1),
+            rel_pos_embed: bool = True,
+            residual_pooling: bool = True,
+            with_cls_token: bool = True,
+            dim_mul_in_attention: bool = True,
+            input_size: Optional[Tuple[int]] = None,
+            rel_pos_zero_init: bool = False,
+            init_cfg: Optional[Dict] = None,
     ) -> None:
         super().__init__(init_cfg=init_cfg)
         self.with_cls_token = with_cls_token
@@ -530,6 +529,7 @@ class MultiScaleBlock(BaseModule):
         x = skip + self.drop_path(x_mlp)
 
         return x, out_size
+
 
 @MODELS.register_module(force=True)
 class MViT(BaseModule):
@@ -658,37 +658,38 @@ class MViT(BaseModule):
     num_extra_tokens = 1
 
     def __init__(
-        self,
-        arch: str = 'base',
-        spatial_size: int = 224,
-        temporal_size: int = 16,
-        in_channels: int = 3,
-        pretrained: Optional[str] = None,
-        pretrained_type: Optional[str] = None,
-        out_scales: Union[int, Sequence[int]] = -1,
-        drop_path_rate: float = 0.,
-        use_abs_pos_embed: bool = False,
-        interpolate_mode: str = 'trilinear',
-        pool_kernel: tuple = (3, 3, 3),
-        dim_mul: int = 2,
-        head_mul: int = 2,
-        adaptive_kv_stride: tuple = (1, 8, 8),
-        rel_pos_embed: bool = True,
-        residual_pooling: bool = True,
-        dim_mul_in_attention: bool = True,
-        with_cls_token: bool = True,
-        output_cls_token: bool = True,
-        rel_pos_zero_init: bool = False,
-        mlp_ratio: float = 4.,
-        qkv_bias: bool = True,
-        norm_cfg: Dict = dict(type='LN', eps=1e-6),
-        patch_cfg: Dict = dict(
-            kernel_size=(3, 7, 7), stride=(2, 4, 4), padding=(1, 3, 3)),
-        init_cfg: Optional[Union[Dict, List[Dict]]] = [
-            dict(type='TruncNormal', layer=['Conv2d', 'Conv3d'], std=0.02),
-            dict(type='TruncNormal', layer='Linear', std=0.02, bias=0.02),
-            dict(type='Constant', layer='LayerNorm', val=1., bias=0.02),
-        ]
+            self,
+            arch: str = 'base',
+            spatial_size: int = 224,
+            temporal_size: int = 16,
+            in_channels: int = 3,
+            pretrained: Optional[str] = None,
+            pretrained_type: Optional[str] = None,
+            out_scales: Union[int, Sequence[int]] = -1,
+            drop_path_rate: float = 0.,
+            use_abs_pos_embed: bool = False,
+            interpolate_mode: str = 'trilinear',
+            pool_kernel: tuple = (3, 3, 3),
+            dim_mul: int = 2,
+            head_mul: int = 2,
+            adaptive_kv_stride: tuple = (1, 8, 8),
+            rel_pos_embed: bool = True,
+            residual_pooling: bool = True,
+            dim_mul_in_attention: bool = True,
+            with_cls_token: bool = True,
+            output_cls_token: bool = True,
+            rel_pos_zero_init: bool = False,
+            mlp_ratio: float = 4.,
+            qkv_bias: bool = True,
+            norm_cfg: Dict = dict(type='LN', eps=1e-6),
+            patch_cfg: Dict = dict(
+                kernel_size=(3, 7, 7), stride=(2, 4, 4), padding=(1, 3, 3)),
+            init_cfg: Optional[Union[Dict, List[Dict]]] = [
+                dict(type='TruncNormal', layer=['Conv2d', 'Conv3d'], std=0.02),
+                dict(type='TruncNormal', layer='Linear', std=0.02, bias=0.02),
+                dict(type='Constant', layer='LayerNorm', val=1., bias=0.02),
+            ],
+            t_downscale: bool = False
     ) -> None:
         if pretrained:
             init_cfg = dict(type='Pretrained', checkpoint=pretrained)
@@ -750,7 +751,7 @@ class MViT(BaseModule):
         # Set cls token
         if output_cls_token:
             assert with_cls_token is True, f'with_cls_token must be True if' \
-                f'set output_cls_token to True, but got {with_cls_token}'
+                                           f'set output_cls_token to True, but got {with_cls_token}'
         self.with_cls_token = with_cls_token
         self.output_cls_token = output_cls_token
 
@@ -776,7 +777,7 @@ class MViT(BaseModule):
                 num_heads *= head_mul
 
             if i in self.downscale_indices:
-                stride_q = [1, 2, 2]
+                stride_q = [1, 2, 2] if not t_downscale else [2, 2, 2]
                 stride_kv = [max(s // 2, 1) for s in stride_kv]
             else:
                 stride_q = [1, 1, 1]
@@ -807,7 +808,7 @@ class MViT(BaseModule):
                 dim_mul_in_attention=dim_mul_in_attention,
                 input_size=input_size,
                 rel_pos_zero_init=rel_pos_zero_init,
-                with_cls_token=with_cls_token)      # ----------------------
+                with_cls_token=with_cls_token)  # ----------------------
             self.blocks.append(attention_block)
 
             input_size = attention_block.init_out_size
@@ -862,7 +863,7 @@ class MViT(BaseModule):
         if self.use_abs_pos_embed:
             trunc_normal_(self.pos_embed, std=0.02)
 
-    def forward(self, x: torch.Tensor) ->\
+    def forward(self, x: torch.Tensor) -> \
             Tuple[Union[torch.Tensor, List[torch.Tensor]]]:
         """Forward the MViT."""
         B = x.shape[0]

@@ -1,2 +1,2 @@
-from .slowonly_96win import SlowOnly_96win
+from .slowonly import SlowOnly
 from .mvit import MViT
