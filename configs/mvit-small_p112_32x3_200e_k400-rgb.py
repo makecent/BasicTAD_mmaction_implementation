@@ -42,16 +42,16 @@ file_client_args = dict(io_backend='disk')
 
 train_pipeline = [
     dict(type='DecordInit', **file_client_args),
-    dict(type='SampleFrames', clip_len=16, frame_interval=4, num_clips=1),
+    dict(type='SampleFrames', clip_len=32, frame_interval=3, num_clips=1),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(-1, 256)),
+    dict(type='Resize', scale=(-1, 128)),
     dict(
         type='PytorchVideoWrapper',
         op='RandAugment',
         magnitude=7,
         num_layers=4),
     dict(type='RandomResizedCrop'),
-    dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    dict(type='Resize', scale=(112, 112), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     dict(type='RandomErasing', erase_prob=0.25, mode='rand'),
     dict(type='FormatShape', input_format='NCTHW'),
@@ -61,13 +61,13 @@ val_pipeline = [
     dict(type='DecordInit', **file_client_args),
     dict(
         type='SampleFrames',
-        clip_len=16,
-        frame_interval=4,
+        clip_len=32,
+        frame_interval=3,
         num_clips=1,
         test_mode=True),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(-1, 256)),
-    dict(type='CenterCrop', crop_size=224),
+    dict(type='Resize', scale=(-1, 128)),
+    dict(type='CenterCrop', crop_size=112),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='PackActionInputs')
 ]
@@ -75,13 +75,13 @@ test_pipeline = [
     dict(type='DecordInit', **file_client_args),
     dict(
         type='SampleFrames',
-        clip_len=16,
-        frame_interval=4,
+        clip_len=32,
+        frame_interval=3,
         num_clips=5,
         test_mode=True),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(-1, 224)),
-    dict(type='CenterCrop', crop_size=224),
+    dict(type='Resize', scale=(-1, 112)),
+    dict(type='CenterCrop', crop_size=112),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='PackActionInputs')
 ]
