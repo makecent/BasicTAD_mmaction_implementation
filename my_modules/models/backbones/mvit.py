@@ -54,11 +54,11 @@ def resize_pos_embed(pos_embed: torch.Tensor,
 
     src_weight = pos_embed[:, num_extra_tokens:]
     src_weight = src_weight.reshape(1, src_t, src_h, src_w,
-                                    C).permute(0, 4, 1, 2, 3)
+                                    C).permute(0, 4, 1, 2, 3).contiguous()
 
     dst_weight = F.interpolate(
         src_weight, size=dst_shape, align_corners=False, mode=mode)
-    dst_weight = torch.flatten(dst_weight, 2).transpose(1, 2)
+    dst_weight = torch.flatten(dst_weight, 2).transpose(1, 2).contiguous()
 
     return torch.cat((extra_tokens, dst_weight), dim=1)
 
@@ -82,12 +82,12 @@ def resize_decomposed_rel_pos(rel_pos: torch.Tensor, q_size: int,
         # Interpolate rel pos.
         resized = F.interpolate(
             # (L, C) -> (1, C, L)
-            rel_pos.transpose(0, 1).unsqueeze(0),
+            rel_pos.transpose(0, 1).unsqueeze(0).contiguous(),
             size=max_rel_dist,
             mode='linear',
         )
         # (1, C, L) -> (L, C)
-        resized = resized.squeeze(0).transpose(0, 1)
+        resized = resized.squeeze(0).transpose(0, 1).contiguous()
     else:
         resized = rel_pos
 
@@ -215,7 +215,7 @@ def attention_pool(x: torch.Tensor,
     out_size = x.shape[2:]
 
     # (B*num_heads, C, T', H', W') -> (B, num_heads, T'*H'*W', C)
-    x = x.reshape(B, num_heads, C, -1).transpose(2, 3)
+    x = x.reshape(B, num_heads, C, -1).transpose(2, 3).contiguous()
 
     if with_cls_token:
         x = torch.cat((cls_tok, x), dim=2)
@@ -344,7 +344,7 @@ class MultiScaleAttention(BaseModule):
         # qkv: (B, H*W, 3, num_heads, C)
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, -1)
         # q, k, v: (B, num_heads, H*W, C)
-        q, k, v = qkv.permute(2, 0, 3, 1, 4).unbind(0)
+        q, k, v = qkv.permute(2, 0, 3, 1, 4).contiguous().unbind(0)
 
         q, q_shape = attention_pool(
             q,
@@ -365,7 +365,7 @@ class MultiScaleAttention(BaseModule):
             norm=self.norm_v,
             with_cls_token=self.with_cls_token)
 
-        attn = (q * self.scale) @ k.transpose(-2, -1)
+        attn = (q * self.scale) @ k.transpose(-2, -1).contiguous()
         if self.rel_pos_embed:
             attn = add_decomposed_rel_pos(attn, q, q_shape, k_shape,
                                           self.rel_pos_h, self.rel_pos_w,
@@ -381,7 +381,7 @@ class MultiScaleAttention(BaseModule):
                 x = x + q
 
         # (B, num_heads, H'*W', C'//num_heads) -> (B, H'*W', C')
-        x = x.transpose(1, 2).reshape(B, -1, self.out_dims)
+        x = x.transpose(1, 2).reshape(B, -1, self.out_dims).contiguous()
         x = self.proj(x)
 
         return x, q_shape
@@ -845,7 +845,7 @@ class MViT(BaseModule):
                             size=L2,
                             mode='linear')
                         interp_param = \
-                            interp_param.view(dim2, L2).permute(1, 0)
+                            interp_param.view(dim2, L2).permute(1, 0).contiguous()
                         state_dict[k] = interp_param
                         logger.info(
                             f'{k} reshaped from {(L1, dim1)} to {L2, dim2}')
@@ -893,7 +893,7 @@ class MViT(BaseModule):
                 if stage_index in self.out_scales:
                     B, _, C = x.shape
                     x = getattr(self, f'norm{stage_index}')(x)
-                    tokens = x.transpose(1, 2)
+                    tokens = x.transpose(1, 2).contiguous()
                     if self.with_cls_token:
                         patch_token = tokens[:, :, 1:].reshape(
                             B, C, *patch_resolution)
