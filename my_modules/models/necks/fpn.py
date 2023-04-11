@@ -74,6 +74,7 @@ class FPN(nn.Module):
                  extra_convs_on_inputs=True,
                  relu_before_extra_convs=False,
                  no_norm_on_lateral=False,
+                 spatial_pooling=False,  # -----------------
                  conv_cfg=dict(type='Conv1d'),
                  norm_cfg=dict(type='SyncBN'),
                  act_cfg=None,
@@ -88,6 +89,8 @@ class FPN(nn.Module):
         self.no_norm_on_lateral = no_norm_on_lateral
         self.fp16_enabled = False
         self.upsample_cfg = upsample_cfg.copy()
+        self.spatial_pooling = nn.Sequential(nn.AdaptiveAvgPool3d((None, 1, 1)),
+                                             nn.Flatten(start_dim=-3)) if spatial_pooling else nn.Identity()
 
         if end_level == -1:
             self.backbone_end_level = self.num_ins
@@ -166,6 +169,7 @@ class FPN(nn.Module):
 
     def forward(self, inputs):
         """Forward function."""
+        inputs = [self.spatial_pooling(x) for x in inputs]
         assert len(inputs) == len(self.in_channels)
 
         # build laterals

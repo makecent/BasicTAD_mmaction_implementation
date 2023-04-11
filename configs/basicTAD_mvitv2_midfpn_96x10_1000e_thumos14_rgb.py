@@ -25,7 +25,7 @@ model = dict(
             type='Pretrained',
             prefix='backbone',
             checkpoint='work_dirs/mvit-small_p112_32x3_20e_k400-rgb/epoch_20.pth')),
-    neck=[dict(type='FPN', in_channels=[96, 192, 384, 768])],
+    neck=[dict(type='FPN', in_channels=[96, 192, 384, 768], spatial_pooling=True, num_outs=4)],
     data_preprocessor=dict(
         type='ActionDataPreprocessor',
         mean=[114.75, 114.75, 114.75],

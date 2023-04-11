@@ -19,7 +19,7 @@ class SegmentDetector(SingleStageDetector):
     """
 
     def __init__(self,
-                 backbone=dict(type='SlowOnly_96win'),
+                 backbone=dict(type='SlowOnly'),
                  neck=[dict(type='VDM'), dict(type='FPN')],
                  bbox_head=dict(type='RetinaHead1D'),
                  data_preprocessor=dict(
