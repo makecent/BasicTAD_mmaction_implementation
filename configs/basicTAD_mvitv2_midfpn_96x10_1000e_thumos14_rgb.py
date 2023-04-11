@@ -1,4 +1,4 @@
-_base_ = ['./basicTAD_slowonly_96x10_500e_thumos14_rgb.py']
+_base_ = ['./basicTAD_slowonly_96x10_1200e_thumos14_rgb.py']
 
 # model settings
 model = dict(
