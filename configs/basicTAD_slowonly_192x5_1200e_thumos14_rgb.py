@@ -25,6 +25,7 @@ model = dict(
 clip_len = 192
 frame_interval = 5
 img_shape = (112, 112)
+img_shape_test = (128, 128)
 
 train_pipeline = [
     dict(type='Time2Frame'),
@@ -50,6 +51,16 @@ train_pipeline = [
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='MyPackInputs')]
 
+val_pipeline = [
+    dict(type='Time2Frame'),
+    dict(type='RawFrameDecode'),
+    dict(type='Resize', scale=(128, -1), keep_ratio=True),
+    dict(type='SpatialCenterCrop', crop_size=img_shape_test),
+    dict(type='Pad', size=(clip_len, *img_shape_test)),
+    dict(type='FormatShape', input_format='NCTHW'),
+    dict(type='MyPackInputs')
+]
+
 train_dataloader = dict(dataset=dict(pipeline=train_pipeline))
-val_dataloader = dict(dataset=dict(clip_len=clip_len, frame_interval=frame_interval))
+val_dataloader = dict(dataset=dict(clip_len=clip_len, frame_interval=frame_interval, pipeline=val_pipeline))
 test_dataloader = val_dataloader
