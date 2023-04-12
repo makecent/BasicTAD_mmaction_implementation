@@ -6,6 +6,8 @@ model = dict(
         type='MViT',
         arch='small',
         drop_path_rate=0.2,
+        spatial_size=112,
+        temporal_size=96,
         with_cls_token=False,
         output_cls_token=False,
         patch_cfg=dict(kernel_size=(3, 7, 7), stride=(1, 4, 4), padding=(1, 3, 3)),

@@ -2,14 +2,6 @@ _base_ = ['./basicTAD_slowonly_96x10_1200e_thumos14_rgb.py']
 
 # model settings
 model = dict(
-    type='SegmentDetector',
-    # bbox_head=dict(
-    #     type='RetinaHead1D',
-    #     anchor_generator=dict(
-    #         type='Anchor1DGenerator',
-    #         octave_base_scale=2,
-    #         scales_per_octave=4,
-    #         strides=[1, 2, 4, 8])),
     backbone=dict(
         type='MViT',
         arch='small',
