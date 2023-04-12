@@ -24,6 +24,8 @@ model = dict(type='mmdet.SingleStageDetector',
                  type='RetinaHead1D',
                  num_classes=20,
                  in_channels=256,
+                 conv_cfg=dict(type='Conv1d'),
+                 norm_cfg=dict(type='SyncBN'),
                  anchor_generator=dict(
                      type='Anchor1DGenerator',
                      octave_base_scale=2,
