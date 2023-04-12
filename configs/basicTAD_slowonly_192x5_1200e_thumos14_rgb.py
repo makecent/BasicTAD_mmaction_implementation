@@ -2,7 +2,13 @@ _base_ = ['./basicTAD_slowonly_96x10_1200e_thumos14_rgb.py']
 # model settings
 model = dict(type='SegmentDetector',
              neck=[dict(type='MaxPool3d', kernel_size=(2, 1, 1), stride=(2, 1, 1)), dict(type='VDM'), dict(type='FPN')],
-             bbox_head=dict(anchor_generator=dict(type='Anchor1DGenerator', strides=[2, 4, 8, 16, 32]),))
+             bbox_head=dict(
+                 type='RetinaHead1D',
+                 anchor_generator=dict(
+                     type='Anchor1DGenerator',
+                     octave_base_scale=2,
+                     scales_per_octave=5,
+                     strides=[2, 4, 8, 16, 32])))
 
 # dataset settings
 data_root = 'my_data/thumos14'  # Root path to data for training
