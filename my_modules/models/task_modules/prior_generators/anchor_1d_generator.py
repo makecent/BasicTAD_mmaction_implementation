@@ -105,40 +105,6 @@ class Anchor1DGenerator:
 
         return base_anchors
 
-    # def gen_anchors(self,
-    #                 featmap_tsizes,
-    #                 video_metas,
-    #                 dtype=torch.float,
-    #                 device='cuda'):
-    #     """Get anchors according to feature map sizes.
-    #
-    #     Args:
-    #         featmap_tsizes (list[int]): Multi-level feature map temporal sizes.
-    #         video_metas (list[dict]): Video meta info.
-    #         device (torch.device | str): Device for returned tensors
-    #     Returns:
-    #         tuple:
-    #             anchor_list (list[Tensor]): Anchors of each video.
-    #             valid_flag_list (list[Tensor]): Valid flags of each video.
-    #     """
-    #     num_videos = len(video_metas)
-    #
-    #     # since feature map temporal sizes of all videos are the same, we only
-    #     # compute anchors for one time
-    #     multi_level_anchors = self.grid_priors(featmap_tsizes, dtype,
-    #                                            device)
-    #     anchor_list = [multi_level_anchors for _ in range(num_videos)]
-    #
-    #     # for each video, we compute valid flags of multi level anchors
-    #     valid_flag_list = []
-    #     for video_id, video_meta in enumerate(video_metas):
-    #         multi_level_flags = self.valid_flags(featmap_tsizes,
-    #                                              video_meta['pad_tsize'],
-    #                                              device)
-    #         valid_flag_list.append(multi_level_flags)
-    #
-    #     return anchor_list, valid_flag_list
-
     def grid_priors(self, featmap_tsizes, dtype=torch.float32, device='cuda'):
         """Get points according to feature map sizes.
 

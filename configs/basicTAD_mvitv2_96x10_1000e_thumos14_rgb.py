@@ -17,26 +17,34 @@ model = dict(
             checkpoint='https://download.openmmlab.com/mmaction/v1.0/recognition/mvit/mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb/mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb_20230201-23284ff3.pth'
         )
     ),
-    neck=[dict(type='VDM', in_channels=768, out_channels=768), dict(type='FPN', in_channels=[768] * 5)],
+    neck=[
+        dict(
+            type='VDM',
+            in_channels=768,
+            out_channels=768,
+            conv_cfg=dict(type='Conv3d'),
+            norm_cfg=dict(type='SyncBN'),
+            kernel_sizes=(3, 1, 1),
+            strides=(2, 1, 1),
+            paddings=(1, 0, 0),
+            stage_layers=(1, 1, 1, 1),
+            out_indices=(0, 1, 2, 3, 4),
+            out_pooling=True),
+        dict(type='mmdet.FPN',
+             in_channels=[768] * 5,
+             out_channels=256,
+             num_outs=5,
+             conv_cfg=dict(type='Conv1d'),
+             norm_cfg=dict(type='SyncBN'))],
     data_preprocessor=dict(
         type='ActionDataPreprocessor',
         mean=[114.75, 114.75, 114.75],
         std=[57.375, 57.375, 57.375],
         format_shape='NCTHW'))
 
-# dataset settings
 clip_len = 96
-frame_interval = 10
-img_shape = (112, 112)
 img_shape_test = (112, 112)
-overlap_ratio = 0.25
 
-data_root = 'my_data/thumos14'  # Root path to data for training
-data_prefix_train = 'rawframes/val'  # path to data for training
-data_prefix_val = 'rawframes/test'  # path to data for validation and testing
-ann_file_train = 'annotations/basicTAD/val.json'  # Path to the annotation file for training
-ann_file_val = 'annotations/basicTAD/test.json'  # Path to the annotation file for validation
-ann_file_test = ann_file_val
 val_pipeline = [
     dict(type='Time2Frame'),
     dict(type='RawFrameDecode'),
@@ -46,49 +54,34 @@ val_pipeline = [
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='MyPackInputs')
 ]
-val_dataloader = dict(  # Config of validation dataloader
-    batch_size=2,  # Batch size of each single GPU during validation
-    num_workers=6,  # Workers to pre-fetch data for each single GPU during validation
-    persistent_workers=True,  # If `True`, the dataloader will not shut down the worker processes after an epoch end
-    sampler=dict(type='DefaultSampler', shuffle=False),  # Not shuffle during validation and testing
-    # DefaultSampler which supports both distributed and non-distributed training. Refer to https://github.com/open-mmlab/mmengine/blob/main/mmengine/dataset/sampler.py)  # Randomly shuffle the training data in each epoch
-    dataset=dict(  # Config of validation dataset
-        type='Thumos14ValDataset',
-        clip_len=clip_len, frame_interval=frame_interval, overlap_ratio=0.25,
-        filename_tmpl='img_{:05}.jpg',
-        ann_file=ann_file_val,  # Path of annotation file
-        data_root=data_root,
-        data_prefix=dict(imgs=data_prefix_val),  # Prefix of specific data components
-        pipeline=val_pipeline,
-        test_mode=True))
+val_dataloader = dict( dataset=dict(pipeline=val_pipeline))
 test_dataloader = val_dataloader
 train_dataloader = dict(batch_size=2)
-#
+
+# optimizer settings
 train_cfg = dict(max_epochs=1000)
 # learning policy
-param_scheduler = [  # Parameter scheduler for updating optimizer parameters, support dict or list
-    # Linear learning rate warm-up scheduler
+param_scheduler = [
     dict(type='LinearLR',
          start_factor=0.01,
          by_epoch=True,
          begin=0,
          end=200,
          convert_to_iter_based=True),
-    dict(type='CosineAnnealingLR',  # Decays the learning rate once the number of epoch reaches one of the milestones
+    dict(type='CosineAnnealingLR',
          eta_min_ratio=0.01,
          by_epoch=True,
          begin=200,
          end=1000,
-         convert_to_iter_based=True)]  # Convert to update by iteration.
+         convert_to_iter_based=True)]
 
 # optimizer
-optim_wrapper = dict(  # Config of optimizer wrapper
+optim_wrapper = dict(
     _delete_=True,
-    type='OptimWrapper',  # Name of optimizer wrapper, switch to AmpOptimWrapper to enable mixed precision training
+    type='OptimWrapper',
     optimizer=dict(
-        # Config of optimizer. Support all kinds of optimizers in PyTorch. Refer to https://pytorch.org/docs/stable/optim.html#algorithms
-        type='AdamW',  # Name of optimizer
-        lr=1e-4,  # Learning rate
+        type='AdamW',
+        lr=1e-4,
         betas=(0.9, 0.999),
-        weight_decay=0.05),  # Weight decay
+        weight_decay=0.05),
     clip_grad=dict(max_norm=40, norm_type=2))

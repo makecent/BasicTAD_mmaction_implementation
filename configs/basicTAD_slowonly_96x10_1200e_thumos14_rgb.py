@@ -1,5 +1,68 @@
 # model settings
-model = dict(type='SegmentDetector')
+model = dict(type='mmdet.SingleStageDetector',
+             backbone=dict(type='SlowOnly'),
+             neck=[
+                 dict(
+                     type='VDM',
+                     in_channels=2048,
+                     out_channels=512,
+                     conv_cfg=dict(type='Conv3d'),
+                     norm_cfg=dict(type='SyncBN'),
+                     kernel_sizes=(3, 1, 1),
+                     strides=(2, 1, 1),
+                     paddings=(1, 0, 0),
+                     stage_layers=(1, 1, 1, 1),
+                     out_indices=(0, 1, 2, 3, 4),
+                     out_pooling=True),
+                 dict(type='mmdet.FPN',
+                      in_channels=[2048, 512, 512, 512, 512],
+                      out_channels=256,
+                      num_outs=5,
+                      conv_cfg=dict(type='Conv1d'),
+                      norm_cfg=dict(type='SyncBN'))],
+             bbox_head=dict(
+                 type='RetinaHead1D',
+                 num_classes=20,
+                 in_channels=256,
+                 anchor_generator=dict(
+                     type='Anchor1DGenerator',
+                     octave_base_scale=2,
+                     scales_per_octave=5,
+                     strides=[1, 2, 4, 8, 16]),
+                 bbox_coder=dict(
+                     type='DeltaSegmentCoder',
+                     target_means=[.0, .0],
+                     target_stds=[1.0, 1.0]),
+                 reg_decoded_bbox=True,
+                 loss_cls=dict(type='mmdet.FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
+                 loss_bbox=dict(type='DIoU1DLoss', loss_weight=1.0),
+                 init_cfg=dict(
+                     type='Normal',
+                     layer='Conv1d',
+                     std=0.01,
+                     override=dict(
+                         type='Normal',
+                         name='retina_cls',
+                         std=0.01,
+                         bias_prob=0.01))),
+             data_preprocessor=dict(
+                 type='ActionDataPreprocessor',
+                 mean=[123.675, 116.28, 103.53],
+                 std=[58.395, 57.12, 57.375],
+                 format_shape='NCTHW'),
+             train_cfg=dict(
+                 assigner=dict(
+                     type='mmdet.MaxIoUAssigner',
+                     pos_iou_thr=0.6,
+                     neg_iou_thr=0.4,
+                     min_pos_iou=0,
+                     ignore_iof_thr=-1,
+                     ignore_wrt_candidates=True,
+                     iou_calculator=dict(type='SegmentOverlaps')),
+                 allowed_border=-1,
+                 pos_weight=-1,
+                 debug=False),
+             test_cfg=dict(nms_pre=300, score_thr=0.005))
 
 # dataset settings
 data_root = 'my_data/thumos14'  # Root path to data for training
@@ -51,7 +114,7 @@ val_pipeline = [
 
 train_dataloader = dict(  # Config of train dataloader
     batch_size=2,  # Batch size of each single GPU during training
-    num_workers=2,  # Workers to pre-fetch data for each single GPU during training
+    num_workers=6,  # Workers to pre-fetch data for each single GPU during training
     persistent_workers=True,
     # If `True`, the dataloader will not shut down the worker processes after an epoch end, which can accelerate training speed
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -64,13 +127,13 @@ train_dataloader = dict(  # Config of train dataloader
         pipeline=train_pipeline))
 val_dataloader = dict(  # Config of validation dataloader
     batch_size=2,  # Batch size of each single GPU during validation
-    num_workers=2,  # Workers to pre-fetch data for each single GPU during validation
+    num_workers=6,  # Workers to pre-fetch data for each single GPU during validation
     persistent_workers=True,  # If `True`, the dataloader will not shut down the worker processes after an epoch end
     sampler=dict(type='DefaultSampler', shuffle=False),  # Not shuffle during validation and testing
     # DefaultSampler which supports both distributed and non-distributed training. Refer to https://github.com/open-mmlab/mmengine/blob/main/mmengine/dataset/sampler.py)  # Randomly shuffle the training data in each epoch
     dataset=dict(  # Config of validation dataset
         type='Thumos14ValDataset',
-        clip_len=clip_len, frame_interval=frame_interval, overlap_ratio=0.25,
+        clip_len=clip_len, frame_interval=frame_interval, overlap_ratio=overlap_ratio,
         filename_tmpl='img_{:05}.jpg',
         ann_file=ann_file_val,  # Path of annotation file
         data_root=data_root,

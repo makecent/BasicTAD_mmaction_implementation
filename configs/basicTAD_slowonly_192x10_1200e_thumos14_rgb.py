@@ -1,29 +1,7 @@
-_base_ = ['./basicTAD_slowonly_96x10_1200e_thumos14_rgb.py']
-# model settings
-model = dict(
-    neck=[
-        dict(type='MaxPool3d', kernel_size=(2, 1, 1), stride=(2, 1, 1)),
-        dict(type='VDM',
-             in_channels=2048,
-             out_channels=512,
-             conv_cfg=dict(type='Conv3d'),
-             norm_cfg=dict(type='SyncBN'),
-             kernel_sizes=(3, 1, 1),
-             strides=(2, 1, 1),
-             paddings=(1, 0, 0),
-             stage_layers=(1, 1, 1, 1),
-             out_indices=(0, 1, 2, 3, 4),
-             out_pooling=True),
-        dict(type='mmdet.FPN',
-             in_channels=[2048, 512, 512, 512, 512],
-             out_channels=256,
-             num_outs=5,
-             conv_cfg=dict(type='Conv1d'),
-             norm_cfg=dict(type='SyncBN'))],
-    bbox_head=dict(anchor_generator=dict(strides=[2, 4, 8, 16, 32])))
+_base_ = ['./basicTAD_slowonly_192x5_1200e_thumos14_rgb.py']
 
 clip_len = 192
-frame_interval = 5
+frame_interval = 10
 img_shape = (112, 112)
 
 train_pipeline = [

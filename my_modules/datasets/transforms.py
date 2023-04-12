@@ -418,7 +418,6 @@ class MyPackInputs(BaseTransform):
 
     def __init__(
             self,
-            # meta_keys: Sequence[str] = ('frame_inds', 'num_frames', 'fps', 'duration' 'tsize', 'tshift', 'pad_tsize')
             meta_keys: Sequence[str] = ('video_name', 'duration', 'total_frames', 'fps',
                                         'tsize', 'pad_tsize', 'tshift', 'tscale_factor')
     ) -> None:
