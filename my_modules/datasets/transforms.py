@@ -361,7 +361,7 @@ class Pad(BaseTransform):
             shape = shape + (img.shape[-1],)
         assert len(shape) == len(img.shape)
         for s, img_s in zip(shape, img.shape):
-            assert s >= img_s
+            assert s >= img_s, f"pad shape {s} should be greater than image shape {img_s}"
         pad = np.empty(shape, dtype=img.dtype)
         pad[...] = pad_val
         pad[:img.shape[0], :img.shape[1], :img.shape[2], ...] = img
