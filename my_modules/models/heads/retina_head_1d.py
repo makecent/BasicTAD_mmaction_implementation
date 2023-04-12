@@ -247,9 +247,6 @@ class RetinaHead1D(RetinaHead):
             d_bbox_pred, bbox_targets, bbox_weights, avg_factor=avg_factor)
         return loss_cls, loss_bbox
 
-    def predict(self, rescale=True, *args, **kwargs):   # -----------------
-        super().predict(rescale=rescale, *args, **kwargs)
-
     def predict_by_feat(self,
                         cls_scores: List[Tensor],
                         bbox_preds: List[Tensor],
