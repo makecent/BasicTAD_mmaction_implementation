@@ -248,7 +248,7 @@ class RetinaHead1D(RetinaHead):
         return loss_cls, loss_bbox
 
     def predict(self, rescale=True, *args, **kwargs):   # -----------------
-        super().predict(*args, **kwargs)
+        super().predict(rescale=rescale, *args, **kwargs)
 
     def predict_by_feat(self,
                         cls_scores: List[Tensor],
