@@ -20,7 +20,7 @@ model = dict(
              num_outs=5,
              conv_cfg=dict(type='Conv1d'),
              norm_cfg=dict(type='SyncBN'))],
-    bbox_head=dict(anchor_generator=dict(strides=[2, 4, 8, 16, 32])))
+    bbox_head=dict(anchor_generator=dict(octave_base_scale=2, strides=[2, 4, 8, 16, 32])))
 
 clip_len = 192
 frame_interval = 5
