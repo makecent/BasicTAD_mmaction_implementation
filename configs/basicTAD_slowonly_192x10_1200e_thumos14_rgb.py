@@ -4,6 +4,27 @@ clip_len = 192
 frame_interval = 10
 img_shape = (112, 112)
 
+model = dict(
+    neck=[
+        dict(type='VDM',
+             in_channels=2048,
+             out_channels=512,
+             conv_cfg=dict(type='Conv3d'),
+             norm_cfg=dict(type='SyncBN'),
+             kernel_sizes=(3, 1, 1),
+             strides=(2, 1, 1),
+             paddings=(1, 0, 0),
+             stage_layers=(1, 1, 1, 1, 1),
+             out_indices=(0, 1, 2, 3, 4, 5),
+             out_pooling=True),
+        dict(type='mmdet.FPN',
+             in_channels=[2048, 512, 512, 512, 512],
+             out_channels=256,
+             num_outs=6,
+             conv_cfg=dict(type='Conv1d'),
+             norm_cfg=dict(type='SyncBN'))],
+    bbox_head=dict(anchor_generator=dict(strides=[1, 2, 4, 8, 16, 32])))
+
 train_pipeline = [
     dict(type='Time2Frame'),
     dict(type='TemporalRandomCrop',

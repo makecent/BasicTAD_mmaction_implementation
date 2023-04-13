@@ -27,48 +27,6 @@ class RetinaHead1D(RetinaHead):
     r"""Modified RetinaHead to support 1D
     """
 
-    # def __init__(self,
-    #              num_classes,
-    #              in_channels,
-    #              stacked_convs=4,
-    #              conv_cfg=dict(type='Conv1d'),
-    #              norm_cfg=dict(type='SyncBN'),
-    #              anchor_generator=dict(
-    #                  type='Anchor1DGenerator',
-    #                  octave_base_scale=2,
-    #                  scales_per_octave=5,
-    #                  strides=[1, 2, 4, 8, 16]),
-    #              bbox_coder=dict(
-    #                  type='DeltaSegmentCoder',
-    #                  target_means=[.0, .0],
-    #                  target_stds=[1.0, 1.0]),
-    #              reg_decoded_bbox=False,
-    #              loss_cls=dict(type='mmdet.FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
-    #              loss_bbox=dict(type='DIoU1DLoss', loss_weight=1.0),
-    #              init_cfg=dict(
-    #                  type='Normal',
-    #                  layer='Conv1d',
-    #                  std=0.01,
-    #                  override=dict(
-    #                      type='Normal',
-    #                      name='retina_cls',
-    #                      std=0.01,
-    #                      bias_prob=0.01)),
-    #              **kwargs):
-    #     super(RetinaHead1D, self).__init__(
-    #         num_classes,
-    #         in_channels,
-    #         stacked_convs=stacked_convs,
-    #         conv_cfg=conv_cfg,
-    #         norm_cfg=norm_cfg,
-    #         anchor_generator=anchor_generator,
-    #         bbox_coder=bbox_coder,
-    #         reg_decoded_bbox=reg_decoded_bbox,
-    #         loss_cls=loss_cls,
-    #         loss_bbox=loss_bbox,
-    #         init_cfg=init_cfg,
-    #         **kwargs)
-
     def _init_layers(self):
         super()._init_layers()
         self.retina_cls = nn.Conv1d(  # ---------------
