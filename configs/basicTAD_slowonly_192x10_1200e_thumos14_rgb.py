@@ -18,7 +18,7 @@ model = dict(
              out_indices=(0, 1, 2, 3, 4, 5),
              out_pooling=True),
         dict(type='mmdet.FPN',
-             in_channels=[2048, 512, 512, 512, 512],
+             in_channels=[2048, 512, 512, 512, 512, 512],
              out_channels=256,
              num_outs=6,
              conv_cfg=dict(type='Conv1d'),
