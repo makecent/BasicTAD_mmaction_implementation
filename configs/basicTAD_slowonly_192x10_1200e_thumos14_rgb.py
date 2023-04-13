@@ -23,7 +23,7 @@ model = dict(
              num_outs=6,
              conv_cfg=dict(type='Conv1d'),
              norm_cfg=dict(type='SyncBN'))],
-    bbox_head=dict(anchor_generator=dict(strides=[1, 2, 4, 8, 16, 32])))
+    bbox_head=dict(anchor_generator=dict(octave_base_scale=4, strides=[1, 2, 4, 8, 16, 32])))
 
 train_pipeline = [
     dict(type='Time2Frame'),
