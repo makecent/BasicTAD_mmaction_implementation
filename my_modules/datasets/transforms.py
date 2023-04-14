@@ -12,7 +12,7 @@ from mmengine.structures import BaseDataElement, InstanceData
 from numpy import random
 
 from ..models.task_modules.segments_ops import segment_overlaps
-
+from mmengine.logging import print_log
 
 # from mmcv.parallel import DataContainer as DC
 
@@ -75,10 +75,10 @@ class RandSlideAug(BaseTransform):
                 results['segments_ori'] = results['segments']
                 results['segments'] = segments
                 results['img_idx_mapping'] = img_idx_mapping
-                print('\nSegments slided\n')
-                print(f"\nSegments_ori:{results['segments_ori']}\n")
-                print(f'\nSegments:{segments}\n')
-                print(f"\nTotal Frames:{results['total_frames']}\n")
+                # print('\nSegments slided\n')
+                # print(f"\nSegments_ori:{results['segments_ori']}\n")
+                # print(f'\nSegments:{segments}\n')
+                # print(f"\nTotal Frames:{results['total_frames']}\n")
                 assert np.array(segments).max() < results['total_frames']
 
 
@@ -161,6 +161,8 @@ class TemporalRandomCrop(BaseTransform):
 
             if 'img_idx_mapping' in results:
                 results['frame_inds'] = results['img_idx_mapping'][clip]
+                print_log(f"orginal_clip{clip}")
+                print_log(f"clip_mapped{results['frame_inds']}")
                 assert results['frame_inds'].max() < results['total_frames']
                 assert results['frame_inds'].min() >= 0
 
