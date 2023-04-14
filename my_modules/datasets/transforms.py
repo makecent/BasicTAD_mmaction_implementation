@@ -77,6 +77,7 @@ class RandSlideAug(BaseTransform):
             except RuntimeError:
                 pass
             else:
+                print(f"\n\n Slide successfully\n\n")
                 results['segments_ori'] = results['segments']
                 results['segments'] = segments
                 results['img_idx_mapping'] = img_idx_mapping
