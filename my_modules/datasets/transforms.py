@@ -74,7 +74,7 @@ class RandSlideAug(BaseTransform):
                 _rearranged_images[np.where(~_filled_positions)[0]] = np.array(sorted(background_imgs))
                 break  # successful rearrangement, exit the loop
 
-            except ValueError as e:
+            except IndexError as e:
                 attempt += 1
                 continue
 
