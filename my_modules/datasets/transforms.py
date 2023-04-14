@@ -10,10 +10,65 @@ from mmaction.registry import TRANSFORMS
 from mmcv.transforms import BaseTransform, to_tensor
 from mmengine.structures import BaseDataElement, InstanceData
 from numpy import random
+
 from ..models.task_modules.segments_ops import segment_overlaps
 
 
 # from mmcv.parallel import DataContainer as DC
+
+@TRANSFORMS.register_module()
+class RandSlidAug(BaseTransform):
+    """Randomly slide actions' temporal location for data augmentation"""
+
+    @staticmethod
+    def slide_and_rearrange_segments(segments, total_frames, max_attempts=8888):
+        segments_ = sorted(segments, key=lambda x: x[0])
+        images = np.arange(total_frames)
+
+        attempt = 0
+        while attempt < max_attempts:
+            new_segments = []
+            rearranged_images = np.empty(total_frames, dtype=int)
+            filled_positions = np.zeros(total_frames, dtype=bool)
+
+            try:
+                for start, end in segments_:
+                    segment_length = end - start + 1
+
+                    # Find all the possible start positions for the current segment
+                    possible_starts = \
+                     np.where(np.convolve(~filled_positions, np.ones(segment_length), mode='valid') == segment_length)[0]
+                    # Select a random start position and update the new_segments list
+                    new_start = random.choice(possible_starts)
+                    new_end = new_start + segment_length - 1
+                    new_segments.append((new_start, new_end))
+
+                    # Place the current segment into the rearranged_images array
+                    rearranged_images[new_start:new_end + 1] = images[start:end + 1]
+                    filled_positions[new_start:new_end + 1] = True
+
+                # Compute the set of background indices
+                background_imgs = set(images) - set.union(*[set(range(start, end + 1)) for start, end in segments])
+
+                # Fill in the remaining gaps in the rearranged_images array
+                remaining_indices = np.where(~filled_positions)[0]
+                rearranged_images[remaining_indices] = np.array(sorted(background_imgs))
+                break  # successful rearrangement, exit the loop
+
+            except IndexError:
+                attempt += 1
+                continue
+
+        if attempt == max_attempts:
+            raise RuntimeError("Failed to rearrange segments after {} attempts".format(max_attempts))
+
+        return new_segments, rearranged_images
+
+    def transform(self, results: Dict):
+        if sum([e - s + 1 for s, e in results['segments']]) < results['total_frames'] * 0.5:
+            segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'], results['total_frames'])
+            results['segments'] = segments
+            results['img_idx_mapping'] = img_idx_mapping
 
 
 @TRANSFORMS.register_module()
@@ -76,7 +131,7 @@ class TemporalRandomCrop(BaseTransform):
                 continue
 
             segments = segments[mask]
-            segments = segments.clip(min=start, max=end)    # TODO: Is this necessary?
+            segments = segments.clip(min=start, max=end)  # TODO: Is this necessary?
             segments -= start  # transform the index of segments to be relative to the cropped segment
             segments = segments / self.frame_interval  # to be relative to the input clip
             assert segments.max() < len(clip)
@@ -92,6 +147,9 @@ class TemporalRandomCrop(BaseTransform):
             results['num_clips'] = 1
             results['clip_len'] = self.clip_len
             results['tsize'] = len(clip)
+
+            if 'img_idx_mapping' in results:
+                results['frame_inds'] = results['img_idx_mapping'][clip]
 
             return results
 
@@ -463,7 +521,6 @@ class MyPackInputs(BaseTransform):
         repr_str = self.__class__.__name__
         repr_str += f'(meta_keys={self.meta_keys})'
         return repr_str
-
 
 
 @TRANSFORMS.register_module()
