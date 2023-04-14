@@ -68,9 +68,13 @@ class RandSlideAug(BaseTransform):
 
     def transform(self, results: Dict):
         if sum([e - s + 1 for s, e in results['segments']]) < results['total_frames'] * 0.5:
-            segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'], results['total_frames'])
-            results['segments'] = segments
-            results['img_idx_mapping'] = img_idx_mapping
+            try:
+                segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'], results['total_frames'])
+            except ValueError:
+                pass
+            else:
+                results['segments'] = segments
+                results['img_idx_mapping'] = img_idx_mapping
 
 
 @TRANSFORMS.register_module()
