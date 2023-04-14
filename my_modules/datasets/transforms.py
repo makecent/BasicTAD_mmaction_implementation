@@ -88,7 +88,7 @@ class Time2Frame(BaseTransform):
     """Switch time point to frame index."""
 
     def transform(self, results):
-        print(f"\nSegments_before_fps:{results['segments']}\n")
+        print(f"\n\n\n\n\n\n\nSegments_before_fps:{results['segments']}\n")
         results['segments'] = results['segments'] * results['fps']
         print(f"\nSegments_after_fps:{results['segments']}\n")
 
