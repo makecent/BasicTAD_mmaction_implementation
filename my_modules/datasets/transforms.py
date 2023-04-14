@@ -17,7 +17,7 @@ from ..models.task_modules.segments_ops import segment_overlaps
 # from mmcv.parallel import DataContainer as DC
 
 @TRANSFORMS.register_module()
-class RandSlidAug(BaseTransform):
+class RandSlideAug(BaseTransform):
     """Randomly slide actions' temporal location for data augmentation"""
 
     @staticmethod
