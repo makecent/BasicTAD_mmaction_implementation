@@ -70,6 +70,7 @@ class RandSlideAug(BaseTransform):
                 print(np.sum(filled_positions))
                 print(np.sum(~filled_positions))
                 print(len(np.array(sorted(background_imgs))))
+                raise e
                 attempt += 1
                 continue
 
