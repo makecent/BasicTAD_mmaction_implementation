@@ -25,59 +25,63 @@ class RandSlideAug(BaseTransform):
 
     def slide_and_rearrange_segments(self, segments, total_frames, max_attempts=8888):
         segments_ = np.round(segments).astype(int)
+        mask = np.random.choice([True, False], size=segments_.shape[0], p=[self.p, 1 - self.p])
+
         iou = segment_overlaps(segments_, segments_, mode='iou')
         np.fill_diagonal(iou, 0)
-        iou = iou.max(axis=-1)
+        mask[iou.max(axis=-1) > 0] = False  # segments overlapped with each other will NOT be slided
+
         images = np.arange(total_frames)
+        rearranged_images = np.empty(total_frames, dtype=int)
+        filled_positions = np.zeros(total_frames, dtype=bool)
+
+        # Initialize rearranged_images and filled_positions with non-moving segments
+        for i, (start, end) in enumerate(segments_):
+            if not mask[i]:
+                rearranged_images[start:end + 1] = images[start:end + 1]
+                filled_positions[start:end + 1] = True
 
         attempt = 0
         while attempt < max_attempts:
-            new_segments = []
-            rearranged_images = np.empty(total_frames, dtype=int)
-            filled_positions = np.zeros(total_frames, dtype=bool)
-
+            _rearranged_images = rearranged_images.copy()
+            _filled_positions = filled_positions.copy()
+            _segments = segments_.copy()
             try:
                 for i, (start, end) in enumerate(segments_):
-                    if iou[i] > 0 or random.uniform(0, 1) <= self.p:
-                        new_start, new_end = start, end
-                    else:
+                    if mask[i]:  # Only slide segments with mask=True
                         segment_length = end - start + 1
 
                         # Find all the possible start positions for the current segment
                         possible_starts = \
-                         np.where(np.convolve(~filled_positions, np.ones(segment_length), mode='valid') == segment_length)[0]
+                            np.where(np.convolve(~_filled_positions, np.ones(segment_length),
+                                                 mode='valid') == segment_length)[0]
+
                         # Select a random start position and update the new_segments list
                         new_start = random.choice(possible_starts)
                         new_end = new_start + segment_length - 1
-                    new_segments.append([new_start, new_end])
 
-                    # Place the current segment into the rearranged_images array
-                    rearranged_images[new_start:new_end + 1] = images[start:end + 1]
-                    filled_positions[new_start:new_end + 1] = True
+                        # Update the new_segments array
+                        _segments[i] = [new_start, new_end]
+
+                        # Place the current segment into the rearranged_images array
+                        _rearranged_images[new_start:new_end + 1] = images[start:end + 1]
+                        _filled_positions[new_start:new_end + 1] = True
 
                 # Compute the set of background indices
-                background_imgs = set(images) - set.union(*[set(range(start, end + 1)) for start, end in segments_])
+                background_imgs = set(images) - set.union(*[set(range(start, end + 1)) for start, end in _segments])
 
                 # Fill in the remaining gaps in the rearranged_images array
-                remaining_indices = np.where(~filled_positions)[0]
-                rearranged_images[remaining_indices] = np.array(sorted(background_imgs))
+                _rearranged_images[np.where(~_filled_positions)[0]] = np.array(sorted(background_imgs))
                 break  # successful rearrangement, exit the loop
 
             except ValueError as e:
-                print(total_frames)
-                print(segments_)
-                print(new_segments)
-                print(np.sum(filled_positions))
-                print(np.sum(~filled_positions))
-                print(len(np.array(sorted(background_imgs))))
-                raise e
                 attempt += 1
                 continue
 
         if attempt == max_attempts:
             raise RuntimeError("Failed to rearrange segments after {} attempts".format(max_attempts))
 
-        return np.array(new_segments, dtype=np.float32), rearranged_images
+        return _segments, rearranged_images
 
     def transform(self, results: Dict):
         if random.uniform(0, 1) <= self.p:
