@@ -25,6 +25,7 @@ class RandSlideAug(BaseTransform):
         segments_ = np.round(segments).astype(int)
 
         images = np.arange(total_frames)
+        print(segments_)
 
         attempt = 0
         while attempt < max_attempts:
