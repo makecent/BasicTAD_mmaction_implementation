@@ -25,8 +25,9 @@ class RandSlideAug(BaseTransform):
 
     def slide_and_rearrange_segments(self, segments, total_frames, max_attempts=8888):
         segments_ = np.round(segments).astype(int)
-        iou = segment_overlaps(segments_, segments_, mode='iou')[:, 0].max(axis=-1)
-        print("\n\n", iou)
+        iou = segment_overlaps(segments_, segments_, mode='iou')[:, 0]
+        print(iou.shape)
+        # print("\n\n", iou)
         images = np.arange(total_frames)
 
         attempt = 0
