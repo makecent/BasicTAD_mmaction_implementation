@@ -20,10 +20,12 @@ from mmengine.logging import print_log
 class RandSlideAug(BaseTransform):
     """Randomly slide actions' temporal location for data augmentation"""
 
-    @staticmethod
-    def slide_and_rearrange_segments(segments, total_frames, max_attempts=8888):
-        segments_ = np.round(segments).astype(int)
+    def __init__(self, p=0.5):
+        self.p = p
 
+    def slide_and_rearrange_segments(self, segments, total_frames, max_attempts=8888):
+        iou = segment_overlaps(segments, segments, mode='iou')[:, 0].max(axis=-1)
+        segments_ = np.round(segments).astype(int)
         images = np.arange(total_frames)
 
         attempt = 0
@@ -33,15 +35,18 @@ class RandSlideAug(BaseTransform):
             filled_positions = np.zeros(total_frames, dtype=bool)
 
             try:
-                for start, end in segments_:
-                    segment_length = end - start + 1
+                for i, (start, end) in enumerate(segments_):
+                    if iou[i] > 0 or random.uniform(0, 1) <= self.p:
+                        new_start, new_end = start, end
+                    else:
+                        segment_length = end - start + 1
 
-                    # Find all the possible start positions for the current segment
-                    possible_starts = \
-                     np.where(np.convolve(~filled_positions, np.ones(segment_length), mode='valid') == segment_length)[0]
-                    # Select a random start position and update the new_segments list
-                    new_start = random.choice(possible_starts)
-                    new_end = new_start + segment_length - 1
+                        # Find all the possible start positions for the current segment
+                        possible_starts = \
+                         np.where(np.convolve(~filled_positions, np.ones(segment_length), mode='valid') == segment_length)[0]
+                        # Select a random start position and update the new_segments list
+                        new_start = random.choice(possible_starts)
+                        new_end = new_start + segment_length - 1
                     new_segments.append([new_start, new_end])
 
                     # Place the current segment into the rearranged_images array
@@ -66,7 +71,7 @@ class RandSlideAug(BaseTransform):
         return np.array(new_segments, dtype=np.float32), rearranged_images
 
     def transform(self, results: Dict):
-        if sum([e - s + 1 for s, e in results['segments']]) < results['total_frames'] * 0.5:
+        if random.uniform(0, 1) <= self.p:
             try:
                 segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'], results['total_frames'])
             except ValueError:
