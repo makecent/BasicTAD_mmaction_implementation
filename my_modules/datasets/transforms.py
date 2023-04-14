@@ -89,6 +89,7 @@ class Time2Frame(BaseTransform):
 
     def transform(self, results):
         results['segments'] = results['segments'] * results['fps']
+        print(f"\nSegments_before_fps:{results['segments']}\n")
 
         return results
 
