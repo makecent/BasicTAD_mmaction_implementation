@@ -80,6 +80,7 @@ class RandSlideAug(BaseTransform):
                 # print(f'\nSegments:{segments}\n')
                 # print(f"\nTotal Frames:{results['total_frames']}\n")
                 assert np.array(segments).max() < results['total_frames']
+        return results
 
 
 @TRANSFORMS.register_module()
