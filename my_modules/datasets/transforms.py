@@ -42,7 +42,7 @@ class RandSlideAug(BaseTransform):
                     # Select a random start position and update the new_segments list
                     new_start = random.choice(possible_starts)
                     new_end = new_start + segment_length - 1
-                    new_segments.append((new_start, new_end))
+                    new_segments.append([new_start, new_end])
 
                     # Place the current segment into the rearranged_images array
                     rearranged_images[new_start:new_end + 1] = images[start:end + 1]
@@ -66,7 +66,6 @@ class RandSlideAug(BaseTransform):
         return new_segments, rearranged_images
 
     def transform(self, results: Dict):
-        print(f"\nSegments_before:{results['segments']}\n")
         if sum([e - s + 1 for s, e in results['segments']]) < results['total_frames'] * 0.5:
             try:
                 segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'], results['total_frames'])
@@ -80,7 +79,7 @@ class RandSlideAug(BaseTransform):
                 print(f"\nSegments_ori:{results['segments_ori']}\n")
                 print(f'\nSegments:{segments}\n')
                 print(f"\nTotal Frames:{results['total_frames']}\n")
-                raise TypeError
+                assert np.array(segments).max() < results['total_frames']
 
 
 @TRANSFORMS.register_module()
@@ -88,9 +87,7 @@ class Time2Frame(BaseTransform):
     """Switch time point to frame index."""
 
     def transform(self, results):
-        print(f"\n\n\n\n\n\n\nSegments_before_fps:{results['segments']}\n")
         results['segments'] = results['segments'] * results['fps']
-        print(f"\nSegments_after_fps:{results['segments']}\n")
 
         return results
 
