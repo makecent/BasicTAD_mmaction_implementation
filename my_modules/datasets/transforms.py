@@ -74,7 +74,7 @@ class RandSlideAug(BaseTransform):
         if random.uniform(0, 1) <= self.p:
             try:
                 segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'], results['total_frames'])
-            except ValueError:
+            except RuntimeError:
                 pass
             else:
                 results['segments_ori'] = results['segments']
