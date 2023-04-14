@@ -161,6 +161,8 @@ class TemporalRandomCrop(BaseTransform):
 
             if 'img_idx_mapping' in results:
                 results['frame_inds'] = results['img_idx_mapping'][clip]
+                assert results['frame_inds'].max() < results['total_frames']
+                assert results['frame_inds'].min() >= 0
 
             return results
 
