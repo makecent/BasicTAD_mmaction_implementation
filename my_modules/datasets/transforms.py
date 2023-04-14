@@ -81,7 +81,7 @@ class RandSlideAug(BaseTransform):
         if attempt == max_attempts:
             raise RuntimeError("Failed to rearrange segments after {} attempts".format(max_attempts))
 
-        return _segments, rearranged_images
+        return _segments, _rearranged_images
 
     def transform(self, results: Dict):
         if random.uniform(0, 1) <= self.p:
