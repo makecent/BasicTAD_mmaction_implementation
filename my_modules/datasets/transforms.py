@@ -33,7 +33,7 @@ class RandSlidAug(BaseTransform):
 
             try:
                 for start, end in segments_:
-                    segment_length = end - start + 1
+                    segment_length = int(end) - int(start) + 1
 
                     # Find all the possible start positions for the current segment
                     possible_starts = \
