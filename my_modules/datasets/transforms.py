@@ -63,8 +63,13 @@ class RandSlideAug(BaseTransform):
                 rearranged_images[remaining_indices] = np.array(sorted(background_imgs))
                 break  # successful rearrangement, exit the loop
 
-            except RuntimeError as e:
-                print(e)
+            except IndexError as e:
+                print(total_frames)
+                print(segments_)
+                print(new_segments)
+                print(np.sum(filled_positions))
+                print(np.sum(~filled_positions))
+                print(len(np.array(sorted(background_imgs))))
                 attempt += 1
                 continue
 
