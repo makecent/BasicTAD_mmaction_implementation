@@ -57,6 +57,7 @@ class RandSlideAug(BaseTransform):
                                                  mode='valid') == segment_length)[0]
 
                         # Select a random start position and update the new_segments list
+                        assert possible_starts.size != 0, "unable to put a segment without overlapping"
                         new_start = random.choice(possible_starts)
                         new_end = new_start + segment_length - 1
 
@@ -74,10 +75,12 @@ class RandSlideAug(BaseTransform):
                 _rearranged_images[np.where(~_filled_positions)[0]] = np.array(sorted(background_imgs))
                 break  # successful rearrangement, exit the loop
 
-            except IndexError as e:
-                attempt += 1
-                continue
-
+            except AssertionError as e:
+                if str(e) == "unable to put a segment without overlapping":
+                    attempt += 1
+                    continue
+                else:
+                    raise e
         if attempt == max_attempts:
             raise RuntimeError("Failed to rearrange segments after {} attempts".format(max_attempts))
 
