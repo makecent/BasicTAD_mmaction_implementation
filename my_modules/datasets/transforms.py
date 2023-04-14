@@ -90,9 +90,8 @@ class RandSlideAug(BaseTransform):
             except RuntimeError:
                 pass
             else:
-                print(f"\n\n Slide successfully\n\n")
                 results['segments_ori'] = results['segments']
-                results['segments'] = segments
+                results['segments'] = segments.astype(np.float32)
                 results['img_idx_mapping'] = img_idx_mapping
                 assert np.array(segments).max() < results['total_frames']
         return results
