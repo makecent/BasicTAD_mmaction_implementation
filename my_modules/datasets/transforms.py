@@ -73,6 +73,7 @@ class RandSlideAug(BaseTransform):
             except ValueError:
                 pass
             else:
+                print('\nSegments slided\n')
                 results['segments'] = segments
                 results['img_idx_mapping'] = img_idx_mapping
 
