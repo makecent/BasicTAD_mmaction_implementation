@@ -44,6 +44,7 @@ class RandSlideAug(BaseTransform):
                     new_segments.append((new_start, new_end))
 
                     # Place the current segment into the rearranged_images array
+                    print(new_start, new_end+1)
                     rearranged_images[new_start:new_end + 1] = images[start:end + 1]
                     filled_positions[new_start:new_end + 1] = True
 
