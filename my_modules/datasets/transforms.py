@@ -49,7 +49,7 @@ class RandSlideAug(BaseTransform):
                     filled_positions[new_start:new_end + 1] = True
 
                 # Compute the set of background indices
-                background_imgs = set(images) - set.union(*[set(range(start, end + 1)) for start, end in segments])
+                background_imgs = set(images) - set.union(*[set(range(start, end + 1)) for start, end in segments_])
 
                 # Fill in the remaining gaps in the rearranged_images array
                 remaining_indices = np.where(~filled_positions)[0]
