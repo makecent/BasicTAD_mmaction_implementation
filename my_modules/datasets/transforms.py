@@ -25,7 +25,6 @@ class RandSlideAug(BaseTransform):
         segments_ = np.round(segments).astype(int)
 
         images = np.arange(total_frames)
-        print(segments_)
 
         attempt = 0
         while attempt < max_attempts:
@@ -73,9 +72,12 @@ class RandSlideAug(BaseTransform):
             except ValueError:
                 pass
             else:
-                print('\nSegments slided\n')
+                results['segments_ori'] = results['segments']
                 results['segments'] = segments
                 results['img_idx_mapping'] = img_idx_mapping
+                print('\nSegments slided\n')
+                print(f"\nSegments_ori:{results['segments_ori']}\n")
+                print(f'\nSegments:{segments}\n')
 
 
 @TRANSFORMS.register_module()
