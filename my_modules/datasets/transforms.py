@@ -75,7 +75,7 @@ class RandSlideAug(BaseTransform):
                 results['segments_ori'] = results['segments']
                 results['segments'] = segments
                 results['img_idx_mapping'] = img_idx_mapping
-                # print('\nSegments slided\n')
+                print_log('\nSegments slided\n')
                 # print(f"\nSegments_ori:{results['segments_ori']}\n")
                 # print(f'\nSegments:{segments}\n')
                 # print(f"\nTotal Frames:{results['total_frames']}\n")
@@ -161,11 +161,12 @@ class TemporalRandomCrop(BaseTransform):
 
             if 'img_idx_mapping' in results:
                 results['frame_inds'] = results['img_idx_mapping'][clip]
-                print_log(f"orginal_clip{clip}")
+                print_log(f"original_clip{clip}")
                 print_log(f"clip_mapped{results['frame_inds']}")
                 assert results['frame_inds'].max() < results['total_frames']
                 assert results['frame_inds'].min() >= 0
-
+            else:
+                print_log(f"no img_idx_mapping")
             return results
 
     def __repr__(self):
