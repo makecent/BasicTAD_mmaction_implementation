@@ -63,7 +63,7 @@ class RandSlideAug(BaseTransform):
         if attempt == max_attempts:
             raise RuntimeError("Failed to rearrange segments after {} attempts".format(max_attempts))
 
-        return new_segments, rearranged_images
+        return np.array(new_segments), rearranged_images
 
     def transform(self, results: Dict):
         if sum([e - s + 1 for s, e in results['segments']]) < results['total_frames'] * 0.5:
