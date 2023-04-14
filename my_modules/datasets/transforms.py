@@ -22,11 +22,7 @@ class RandSlideAug(BaseTransform):
 
     @staticmethod
     def slide_and_rearrange_segments(segments, total_frames, max_attempts=8888):
-        print(segments)
-        segments_ = sorted(segments, key=lambda x: x[0])
-        print(segments_)
-        segments_ = map(lambda x: int(round(x)), segments_)
-        print(segments_)
+        segments_ = np.round(segments).astype(int)
 
         images = np.arange(total_frames)
 
