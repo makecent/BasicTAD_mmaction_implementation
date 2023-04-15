@@ -68,6 +68,9 @@ class RandSlideAug(BaseTransform):
 
                         extended_length = extended_end - extended_start + 1
 
+                        if segment_length > 0 and extended_length < 0:
+                            raise ValueError('wrong clamp')
+
                         # Find all the possible start positions for the extended segment
                         possible_starts = \
                             np.where(np.convolve(~_filled_positions, np.ones(extended_length),
