@@ -20,8 +20,9 @@ from mmengine.logging import print_log
 class RandSlideAug(BaseTransform):
     """Randomly slide actions' temporal location for data augmentation"""
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5, extra=0.5):
         self.p = p
+        self.extra = extra
 
     def slide_and_rearrange_segments(self, segments, total_frames, max_attempts=8888):
         segments_ = np.round(segments).astype(int)
@@ -34,9 +35,11 @@ class RandSlideAug(BaseTransform):
         images = np.arange(total_frames)
         rearranged_images = np.empty(total_frames, dtype=int)
         filled_positions = np.zeros(total_frames, dtype=bool)
+        fixed_positions = np.zeros(total_frames, dtype=bool)
 
         # Initialize rearranged_images and filled_positions with non-moving segments
         for i, (start, end) in enumerate(segments_):
+            fixed_positions[start:end + 1] = True
             if not mask[i]:
                 rearranged_images[start:end + 1] = images[start:end + 1]
                 filled_positions[start:end + 1] = True
@@ -46,33 +49,51 @@ class RandSlideAug(BaseTransform):
             _rearranged_images = rearranged_images.copy()
             _filled_positions = filled_positions.copy()
             _segments = segments_.copy()
+            _fixed_positions = fixed_positions.copy()
             try:
                 for i, (start, end) in enumerate(segments_):
                     if mask[i]:  # Only slide segments with mask=True
                         segment_length = end - start + 1
 
-                        # Find all the possible start positions for the current segment
+                        # Extend the segment by the extra factor
+                        extended_start = max(0, int(start - segment_length * self.extra))
+                        extended_end = min(total_frames - 1, int(end + segment_length * self.extra))
+
+                        # Clamp the extended segment to prevent overlap with fixed_positions
+                        intersection = np.logical_and(_fixed_positions, np.r_[
+                            [False] * extended_start, [True] * (extended_end - extended_start + 1), [False] * (
+                                        total_frames - extended_end - 1)])
+                        extended_start = max(0, np.searchsorted(intersection, True) - 1)
+                        extended_end = min(total_frames - 1, total_frames - np.searchsorted(intersection[::-1], True))
+
+                        extended_length = extended_end - extended_start + 1
+
+                        # Find all the possible start positions for the extended segment
                         possible_starts = \
-                            np.where(np.convolve(~_filled_positions, np.ones(segment_length),
-                                                 mode='valid') == segment_length)[0]
+                            np.where(np.convolve(~_filled_positions, np.ones(extended_length),
+                                                 mode='valid') == extended_length)[0]
 
                         # Select a random start position and update the new_segments list
-                        assert possible_starts.size != 0, "unable to put a segment without overlapping"
                         new_start = random.choice(possible_starts)
-                        new_end = new_start + segment_length - 1
+                        new_end = new_start + extended_length - 1
 
-                        # Update the new_segments array
-                        _segments[i] = [new_start, new_end]
+                        # Update the new_segments array to include only the original segment (excluding extra content)
+                        original_start = new_start + int(segment_length * self.extra)
+                        original_end = new_end - int(segment_length * self.extra)
+                        _segments[i] = [original_start, original_end]
 
-                        # Place the current segment into the rearranged_images array
-                        _rearranged_images[new_start:new_end + 1] = images[start:end + 1]
+                        # Place the extended segment into the rearranged_images array
+                        _rearranged_images[new_start:new_end + 1] = images[extended_start:extended_end + 1]
+
+                        # Update the filled and fixed positions
                         _filled_positions[new_start:new_end + 1] = True
+                        _fixed_positions[extended_start:extended_end + 1] = True
 
                 # Compute the set of background indices
-                background_imgs = set(images) - set.union(*[set(range(start, end + 1)) for start, end in _segments])
+                background_imgs = np.where(~_fixed_positions)[0]
 
                 # Fill in the remaining gaps in the rearranged_images array
-                _rearranged_images[np.where(~_filled_positions)[0]] = np.array(sorted(background_imgs))
+                _rearranged_images[np.where(~_filled_positions)[0]] = background_imgs
                 break  # successful rearrangement, exit the loop
 
             except AssertionError as e:
