@@ -100,7 +100,7 @@ class RandSlideAug(BaseTransform):
                         saved_string2 = f"{np.count_nonzero(_filled_positions)}, {np.count_nonzero(_fixed_positions)}"
 
                 if saved_string1 == 'no':
-                    print(f"{segments_}, {_segments}")
+                    print(f"equal segments: {segments_ == _segments}")
                 # Compute the set of background indices
                 background_imgs = images[np.where(~_fixed_positions)[0]]
 
