@@ -61,13 +61,21 @@ class RandSlideAug(BaseTransform):
                         # Extend the segment by the extra factor
                         extended_start = max(0, int(start - segment_length * self.extra))
                         extended_end = min(total_frames - 1, int(end + segment_length * self.extra))
+                        print(f"extended to [{start}, {end}] ...")
 
-                        # Clamp the extended segment to prevent overlap with fixed_positions
-                        intersection = np.logical_and(_fixed_positions, np.r_[
-                            [False] * extended_start, [True] * (extended_end - extended_start + 1), [False] * (
-                                    total_frames - extended_end - 1)])
-                        extended_start = max(0, np.searchsorted(intersection, True) - 1)
-                        extended_end = min(total_frames - 1, total_frames - np.searchsorted(intersection[::-1], True))
+                        # Create a boolean array representing the positions of the extended segment
+                        extended_indices = np.zeros(total_frames, dtype=bool)
+                        extended_indices[extended_start:extended_end + 1] = True
+
+                        # Perform an element-wise AND operation to find intersections
+                        intersection = np.logical_and(fixed_positions, extended_indices)
+
+                        # Clip the extended segment by checking the first and last intersections
+                        if np.any(intersection):
+                            first_intersection = np.argmax(intersection)
+                            last_intersection = total_frames - 1 - np.argmax(intersection[::-1])
+                            extended_start = max(0, first_intersection - 1)
+                            extended_end = min(total_frames - 1, last_intersection + 1)
 
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
                         if extended_start > extended_end:
