@@ -93,12 +93,16 @@ class RandSlideAug(BaseTransform):
                         assert new_end - new_start == extended_end - extended_start
                         assert np.count_nonzero(_filled_positions) == np.count_nonzero(_fixed_positions), f"{_filled_positions[new_start:new_end+1].any()}, " \
                                                                                         f"{_fixed_positions[extended_start:extended_end+1].any()} "
+                        saved_string1 = f"{np.count_nonzero(_filled_positions)}, {np.count_nonzero(_fixed_positions)}"
                         _filled_positions[new_start:new_end + 1] = True
                         _fixed_positions[extended_start:extended_end + 1] = True
+                        saved_string2 = f"{np.count_nonzero(_filled_positions)}, {np.count_nonzero(_fixed_positions)}"
 
 
                 # Compute the set of background indices
                 background_imgs = images[np.where(~_fixed_positions)[0]]
+
+                assert len(background_imgs) == len(_rearranged_images[np.where(~_filled_positions)[0]]), saved_string1 + saved_string2
 
                 # Fill in the remaining gaps in the rearranged_images array
                 _rearranged_images[np.where(~_filled_positions)[0]] = background_imgs
