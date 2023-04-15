@@ -54,6 +54,7 @@ class RandSlideAug(BaseTransform):
             try:
                 for i, (start, end) in enumerate(segments_):
                     if mask[i]:  # Only slide segments with mask=True
+                        print(f"\n moving {i}-th segment [{start}, {end}] ...")
                         _fixed_positions[start: end + 1] = False
                         segment_length = end - start + 1
 
@@ -70,6 +71,7 @@ class RandSlideAug(BaseTransform):
 
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
                         if extended_start > extended_end:
+                            print(f"\n already inside a extension of previous segment")
                             _fixed_positions[start: end + 1] = True
                             _segments[i] = [start, end]
                             continue
