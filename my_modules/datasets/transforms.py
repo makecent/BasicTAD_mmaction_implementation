@@ -24,7 +24,7 @@ class RandSlideAug(BaseTransform):
         self.p = p
         self.extra = extra
 
-    def slide_and_rearrange_segments(self, segments, total_frames, max_attempts=8888):
+    def slide_and_rearrange_segments(self, segments, total_frames, max_attempts=88):
         segments_ = np.round(segments).astype(int)
         mask = np.random.choice([True, False], size=segments_.shape[0], p=[self.p, 1 - self.p])
 
