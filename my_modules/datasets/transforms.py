@@ -62,14 +62,15 @@ class RandSlideAug(BaseTransform):
                         # Clamp the extended segment to prevent overlap with fixed_positions
                         intersection = np.logical_and(_fixed_positions, np.r_[
                             [False] * extended_start, [True] * (extended_end - extended_start + 1), [False] * (
-                                        total_frames - extended_end - 1)])
+                                    total_frames - extended_end - 1)])
                         extended_start = max(0, np.searchsorted(intersection, True) - 1)
                         extended_end = min(total_frames - 1, total_frames - np.searchsorted(intersection[::-1], True))
 
+                        # If the extended segment is entirely contained within the fixed_positions, skip this segment
+                        if extended_start > extended_end:
+                            print(f"[{start}, {end}], {_fixed_positions[start:end].all()}")
+                            continue
                         extended_length = extended_end - extended_start + 1
-
-                        if segment_length > 0 and extended_length < 0:
-                            raise ValueError('wrong clamp')
 
                         # Find all the possible start positions for the extended segment
                         possible_starts = \
