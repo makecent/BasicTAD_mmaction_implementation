@@ -101,6 +101,7 @@ class RandSlideAug(BaseTransform):
                 background_imgs = images[np.where(~_fixed_positions)[0]]
 
                 # Fill in the remaining gaps in the rearranged_images array
+                assert len(background_imgs) == len(_rearranged_images[np.where(~_filled_positions)[0]]), f"{np.count_nonzero(_fixed_positions)}, {np.count_nonzero(_filled_positions)}"
                 _rearranged_images[np.where(~_filled_positions)[0]] = background_imgs
                 break  # successful rearrangement, exit the loop
 
