@@ -107,7 +107,7 @@ class RandSlideAug(BaseTransform):
                 # Compute the set of background indices
                 background_imgs = images[np.where(~_fixed_positions)[0]]
 
-                assert len(background_imgs) == len(_rearranged_images[np.where(~_filled_positions)[0]]), saved_string1 + saved_string2
+                assert len(background_imgs) == len(_rearranged_images[np.where(~_filled_positions)[0]]), f"{_segments}, {segments_}"
 
                 # Fill in the remaining gaps in the rearranged_images array
                 _rearranged_images[np.where(~_filled_positions)[0]] = background_imgs
