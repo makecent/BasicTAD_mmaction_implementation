@@ -50,6 +50,7 @@ class RandSlideAug(BaseTransform):
             _filled_positions = filled_positions.copy()
             _segments = segments_.copy()
             _fixed_positions = fixed_positions.copy()
+            saved_string1, saved_string2 = 'no', 'no'
             try:
                 for i, (start, end) in enumerate(segments_):
                     if mask[i]:  # Only slide segments with mask=True
@@ -98,7 +99,8 @@ class RandSlideAug(BaseTransform):
                         _fixed_positions[extended_start:extended_end + 1] = True
                         saved_string2 = f"{np.count_nonzero(_filled_positions)}, {np.count_nonzero(_fixed_positions)}"
 
-
+                if saved_string1 == 'no':
+                    print(f"{segments_}, {_segments}")
                 # Compute the set of background indices
                 background_imgs = images[np.where(~_fixed_positions)[0]]
 
