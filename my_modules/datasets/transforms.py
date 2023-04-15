@@ -91,7 +91,7 @@ class RandSlideAug(BaseTransform):
 
                         # Update the filled and fixed positions
                         assert new_end - new_start == extended_end - extended_start
-                        assert np.count_nonzero(_filled_positions == _fixed_positions), f"{_filled_positions[new_start:new_end+1].any()}, " \
+                        assert np.count_nonzero(_filled_positions) == np.count_nonzero(_fixed_positions), f"{_filled_positions[new_start:new_end+1].any()}, " \
                                                                                         f"{_fixed_positions[extended_start:extended_end+1].any()} "
                         _filled_positions[new_start:new_end + 1] = True
                         _fixed_positions[extended_start:extended_end + 1] = True
@@ -101,7 +101,6 @@ class RandSlideAug(BaseTransform):
                 background_imgs = images[np.where(~_fixed_positions)[0]]
 
                 # Fill in the remaining gaps in the rearranged_images array
-                assert len(background_imgs) == len(_rearranged_images[np.where(~_filled_positions)[0]]), f"{np.count_nonzero(_fixed_positions)}, {np.count_nonzero(_filled_positions)}"
                 _rearranged_images[np.where(~_filled_positions)[0]] = background_imgs
                 break  # successful rearrangement, exit the loop
 
