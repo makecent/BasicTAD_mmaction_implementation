@@ -61,7 +61,7 @@ class RandSlideAug(BaseTransform):
                         # Extend the segment by the extra factor
                         extended_start = max(0, int(start - segment_length * self.extra))
                         extended_end = min(total_frames - 1, int(end + segment_length * self.extra))
-                        print(f"extended to [{start}, {end}] ...")
+                        print(f"extended to [{extended_start}, {extended_end}] ...")
 
                         # Create a boolean array representing the positions of the extended segment
                         extended_indices = np.zeros(total_frames, dtype=bool)
@@ -79,7 +79,7 @@ class RandSlideAug(BaseTransform):
 
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
                         if extended_start > extended_end:
-                            print(f"\n already inside a extension of previous segment")
+                            # print(f"\n already inside a extension of previous segment")
                             _fixed_positions[start: end + 1] = True
                             _segments[i] = [start, end]
                             continue
@@ -89,7 +89,7 @@ class RandSlideAug(BaseTransform):
                         possible_starts = \
                             np.where(np.convolve(~_filled_positions, np.ones(extended_length),
                                                  mode='valid') == extended_length)[0]
-
+                        assert possible_starts.size > 0, "unable to put a segment without overlapping"
                         # Select a random start position and update the new_segments list
                         new_start = random.choice(possible_starts)
                         new_end = new_start + extended_length - 1
