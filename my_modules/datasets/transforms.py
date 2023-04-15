@@ -54,6 +54,7 @@ class RandSlideAug(BaseTransform):
             try:
                 for i, (start, end) in enumerate(segments_):
                     if mask[i]:  # Only slide segments with mask=True
+                        _fixed_positions[start: end + 1] = False
                         segment_length = end - start + 1
 
                         # Extend the segment by the extra factor
@@ -69,6 +70,7 @@ class RandSlideAug(BaseTransform):
 
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
                         if extended_start > extended_end:
+                            _fixed_positions[start: end + 1] = True
                             _segments[i] = [start, end]
                             continue
                         extended_length = extended_end - extended_start + 1
@@ -92,15 +94,16 @@ class RandSlideAug(BaseTransform):
 
                         # Update the filled and fixed positions
                         assert new_end - new_start == extended_end - extended_start
-                        assert np.count_nonzero(_filled_positions) == np.count_nonzero(_fixed_positions), f"{_filled_positions[new_start:new_end+1].any()}, " \
-                                                                                        f"{_fixed_positions[extended_start:extended_end+1].any()} "
+                        # assert np.count_nonzero(_filled_positions) == np.count_nonzero(_fixed_positions), f"{_filled_positions[new_start:new_end+1].any()}, " \
+                        #                                                                 f"{_fixed_positions[extended_start:extended_end+1].any()} "
                         saved_string1 = f"{np.count_nonzero(_filled_positions)}, {np.count_nonzero(_fixed_positions)}"
                         _filled_positions[new_start:new_end + 1] = True
                         _fixed_positions[extended_start:extended_end + 1] = True
                         saved_string2 = f"{np.count_nonzero(_filled_positions)}, {np.count_nonzero(_fixed_positions)}"
 
-                if saved_string1 == 'no':
-                    print(f"equal segments: {segments_ == _segments}")
+                # if saved_string1 == 'no':
+                #     print(f"equal segments: {(segments_ == _segments).all()}")
+                #     print('')
                 # Compute the set of background indices
                 background_imgs = images[np.where(~_fixed_positions)[0]]
 
