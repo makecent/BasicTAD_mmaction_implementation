@@ -68,7 +68,7 @@ class RandSlideAug(BaseTransform):
 
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
                         if extended_start > extended_end:
-                            print(f"[{start}, {end}], {_fixed_positions[start:end].all()}")
+                            _segments[i] = [start, end]
                             continue
                         extended_length = extended_end - extended_start + 1
 
@@ -90,8 +90,12 @@ class RandSlideAug(BaseTransform):
                         _rearranged_images[new_start:new_end + 1] = images[extended_start:extended_end + 1]
 
                         # Update the filled and fixed positions
+                        assert new_end - new_start == extended_end - extended_start
+                        assert np.count_nonzero(_filled_positions == _fixed_positions), f"{_filled_positions[new_start:new_end+1].any()}, " \
+                                                                                        f"{_fixed_positions[extended_start:extended_end+1].any()} "
                         _filled_positions[new_start:new_end + 1] = True
                         _fixed_positions[extended_start:extended_end + 1] = True
+
 
                 # Compute the set of background indices
                 background_imgs = np.where(~_fixed_positions)[0]
