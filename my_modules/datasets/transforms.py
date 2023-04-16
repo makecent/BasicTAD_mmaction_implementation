@@ -93,6 +93,8 @@ class RandSlideAug(BaseTransform):
                         new_start = random.choice(possible_starts)
                         new_end = new_start + extended_length - 1
 
+                        print(f"moved to [{new_end}, {new_start}] ...")
+
                         # Update the new_segments array to include only the original segment (excluding extra content)
                         original_start = new_start + int(segment_length * self.extra)
                         original_end = new_end - int(segment_length * self.extra)
