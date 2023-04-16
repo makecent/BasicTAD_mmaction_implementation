@@ -75,9 +75,11 @@ class RandSlideAug(BaseTransform):
                             last_intersection = total_frames - 1 - np.argmax(intersection[::-1])
                             extended_start = max(0, first_intersection - 1)
                             extended_end = min(total_frames - 1, last_intersection + 1)
+                            print(f"clip the extended segments to [{extended_start}, {extended_end}] ...")
 
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
                         if extended_start > extended_end:
+                            print(f"start > end, continue...")
                             # print(f"\n already inside a extension of previous segment")
                             _moved_positions[start: end + 1] = True
                             _segments[i] = [start, end]
@@ -92,8 +94,7 @@ class RandSlideAug(BaseTransform):
                         # Select a random start position and update the new_segments list
                         new_start = random.choice(possible_starts)
                         new_end = new_start + extended_length - 1
-
-                        print(f"moved to [{new_end}, {new_start}] ...")
+                        print(f"moved to [{new_start}, {new_end}] ...")
 
                         # Update the new_segments array to include only the original segment (excluding extra content)
                         original_start = new_start + int(segment_length * self.extra)
