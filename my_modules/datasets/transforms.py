@@ -39,7 +39,7 @@ class RandSlideAug(BaseTransform):
 
         # Initialize rearranged_images and filled_positions with non-moving segments
         for i, (start, end) in enumerate(segments):
-            moved_positions[start:end + 1] = True   # non-moving segments are treated as moved with zero offset.
+            moved_positions[start:end + 1] = True  # non-moving segments are treated as moved with zero offset.
             if not mask[i]:
                 rearranged_images[start:end + 1] = images[start:end + 1]
                 filled_positions[start:end + 1] = True
@@ -71,20 +71,23 @@ class RandSlideAug(BaseTransform):
 
                         # Clip the extended segment by checking the first and last intersections
                         if np.any(intersection):
-                            first_intersection = np.argmax(intersection)
-                            last_intersection = total_frames - 1 - np.argmax(intersection[::-1])
-                            extended_start = max(0, first_intersection - 1)
-                            extended_end = min(total_frames - 1, last_intersection + 1)
+                            intersecting_indices = np.where(intersection)[0]
+
+                            # Find the closest intersection on the left and right side
+                            left_intersection = intersecting_indices[intersecting_indices < start]
+                            right_intersection = intersecting_indices[intersecting_indices > end]
+
+                            if left_intersection.size > 0:
+                                extended_start = min(start, left_intersection[-1] + 1)
+
+                            if right_intersection.size > 0:
+                                extended_end = max(end, right_intersection[0] - 1)
                             print(f"clip the extended segments to [{extended_start}, {extended_end}] ...")
 
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
-                        if extended_start > extended_end:
-                            print(f"start > end, continue...")
-                            # print(f"\n already inside a extension of previous segment")
-                            _moved_positions[start: end + 1] = True
-                            _segments[i] = [start, end]
-                            continue
                         extended_length = extended_end - extended_start + 1
+                        if extended_length < segment_length:
+                            raise ValueError(f"extended length {extended_length} should not be smaller than the original length {segment_length}")
 
                         # Find all the possible start positions for the extended segment
                         possible_starts = \
@@ -97,8 +100,8 @@ class RandSlideAug(BaseTransform):
                         print(f"moved to [{new_start}, {new_end}] ...")
 
                         # Update the new_segments array to include only the original segment (excluding extra content)
-                        original_start = new_start + int(segment_length * self.extra)
-                        original_end = new_end - int(segment_length * self.extra)
+                        original_start = start + new_start - extended_start
+                        original_end = end + new_end - extended_end
                         _segments[i] = [original_start, original_end]
 
                         # Place the extended segment into the rearranged_images array
@@ -109,7 +112,8 @@ class RandSlideAug(BaseTransform):
                         _filled_positions[new_start:new_end + 1] = True
                         _moved_positions[extended_start:extended_end + 1] = True
 
-                assert np.count_nonzero(_filled_positions) == np.count_nonzero(_moved_positions), f"{segments}, {_segments}, {mask}"
+                assert np.count_nonzero(_filled_positions) == np.count_nonzero(
+                    _moved_positions), f"{segments}, {_segments}, {mask}"
 
                 # Compute the set of background indices
                 background_imgs = images[np.where(~_moved_positions)[0]]
