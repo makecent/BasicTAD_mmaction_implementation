@@ -25,10 +25,10 @@ class RandSlideAug(BaseTransform):
         self.extra = extra
 
     def slide_and_rearrange_segments(self, segments, total_frames, max_attempts=88):
-        segments_ = np.round(segments).astype(int)
-        mask = np.random.choice([True, False], size=segments_.shape[0], p=[self.p, 1 - self.p])
+        segments = np.round(segments).astype(int)
+        mask = np.random.choice([True, False], size=segments.shape[0], p=[self.p, 1 - self.p])
 
-        iou = segment_overlaps(segments_, segments_, mode='iou')
+        iou = segment_overlaps(segments, segments, mode='iou')
         np.fill_diagonal(iou, 0)
         mask[iou.max(axis=-1) > 0] = False  # segments overlapped with each other will NOT be slided
 
@@ -38,7 +38,7 @@ class RandSlideAug(BaseTransform):
         moved_positions = np.zeros(total_frames, dtype=bool)
 
         # Initialize rearranged_images and filled_positions with non-moving segments
-        for i, (start, end) in enumerate(segments_):
+        for i, (start, end) in enumerate(segments):
             moved_positions[start:end + 1] = True   # non-moving segments are treated as moved with zero offset.
             if not mask[i]:
                 rearranged_images[start:end + 1] = images[start:end + 1]
@@ -48,10 +48,10 @@ class RandSlideAug(BaseTransform):
         while attempt < max_attempts:
             _rearranged_images = rearranged_images.copy()
             _filled_positions = filled_positions.copy()
-            _segments = segments_.copy()
+            _segments = segments.copy()
             _moved_positions = moved_positions.copy()
             try:
-                for i, (start, end) in enumerate(segments_):
+                for i, (start, end) in enumerate(segments):
                     if mask[i]:  # Only slide segments with mask=True
                         print(f"\n moving {i}-th segment [{start}, {end}] ...")
                         _moved_positions[start: end + 1] = False
