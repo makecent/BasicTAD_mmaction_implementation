@@ -53,14 +53,14 @@ class RandSlideAug(BaseTransform):
             try:
                 for i, (start, end) in enumerate(segments):
                     if mask[i]:  # Only slide segments with mask=True
-                        print(f"\n moving {i}-th segment [{start}, {end}] ...")
+                        # print(f"\n moving {i}-th segment [{start}, {end}] ...")
                         _moved_positions[start: end + 1] = False
                         segment_length = end - start + 1
 
                         # Extend the segment by the extra factor
                         extended_start = max(0, start - int(segment_length * self.extra))
                         extended_end = min(total_frames - 1, end + int(segment_length * self.extra))
-                        print(f"extended to [{extended_start}, {extended_end}] ...")
+                        # print(f"extended to [{extended_start}, {extended_end}] ...")
 
                         # Create a boolean array representing the positions of the extended segment
                         extended_indices = np.zeros(total_frames, dtype=bool)
@@ -82,7 +82,7 @@ class RandSlideAug(BaseTransform):
 
                             if right_intersection.size > 0:
                                 extended_end = max(end, right_intersection[0] - 1)
-                            print(f"clip the extended segments to [{extended_start}, {extended_end}] ...")
+                            # print(f"clip the extended segments to [{extended_start}, {extended_end}] ...")
 
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
                         extended_length = extended_end - extended_start + 1
@@ -97,7 +97,7 @@ class RandSlideAug(BaseTransform):
                         # Select a random start position and update the new_segments list
                         new_start = random.choice(possible_starts)
                         new_end = new_start + extended_length - 1
-                        print(f"moved to [{new_start}, {new_end}] ...")
+                        # print(f"moved to [{new_start}, {new_end}] ...")
 
                         # Update the new_segments array to include only the original segment (excluding extra content)
                         original_start = start + new_start - extended_start
