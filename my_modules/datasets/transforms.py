@@ -28,7 +28,7 @@ class RandSlideAug(BaseTransform):
         segments = np.round(segments).astype(int)
         mask = np.random.choice([True, False], size=segments.shape[0], p=[self.p, 1 - self.p])
 
-        iou = segment_overlaps(segments, segments, mode='iou')
+        iou = segment_overlaps(segments, segments, mode='iou', detect_overlap_edge=True)
         np.fill_diagonal(iou, 0)
         mask[iou.max(axis=-1) > 0] = False  # segments overlapped with each other will NOT be slided
 

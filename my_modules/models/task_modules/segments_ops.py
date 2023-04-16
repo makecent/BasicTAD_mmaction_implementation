@@ -75,7 +75,8 @@ def segment_overlaps(segments1,
                      segments2,
                      mode='iou',
                      is_aligned=False,
-                     eps=1e-6):
+                     eps=1e-6,
+                     detect_overlap_edge=False):
     """Calculate overlap between two set of segments.
     If ``is_aligned`` is ``False``, then calculate the ious between each
     segment of segments1 and segments2, otherwise the ious between each aligned
@@ -121,6 +122,8 @@ def segment_overlaps(segments1,
         segments2 = torch.from_numpy(segments2)
         is_numpy = True
 
+    segments1, segments2 = segments1.float(), segments2.float()
+
     assert mode in ['iou', 'iof']
     # Either the segments are empty or the length of segments's last dimenstion
     # is 2
@@ -140,7 +143,10 @@ def segment_overlaps(segments1,
         start = torch.max(segments1[:, 0], segments2[:, 0])  # [rows]
         end = torch.min(segments1[:, 1], segments2[:, 1])  # [rows]
 
-        overlap = (end - start).clamp(min=0)  # [rows, 2]
+        overlap = end - start
+        if detect_overlap_edge:
+            overlap[overlap == 0] += eps
+        overlap = overlap.clamp(min=0)  # [rows, 2]
         area1 = segments1[:, 1] - segments1[:, 0]
 
         if mode == 'iou':
@@ -153,7 +159,10 @@ def segment_overlaps(segments1,
                                                  0])  # [rows, cols]
         end = torch.min(segments1[:, None, 1], segments2[:, 1])  # [rows, cols]
 
-        overlap = (end - start).clamp(min=0)  # [rows, cols]
+        overlap = end - start
+        if detect_overlap_edge:
+            overlap[overlap == 0] += eps
+        overlap = overlap.clamp(min=0)  # [rows, 2]
         area1 = segments1[:, 1] - segments1[:, 0]
 
         if mode == 'iou':
