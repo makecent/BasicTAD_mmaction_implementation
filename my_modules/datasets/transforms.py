@@ -109,7 +109,7 @@ class RandSlideAug(BaseTransform):
                         _filled_positions[new_start:new_end + 1] = True
                         _moved_positions[extended_start:extended_end + 1] = True
 
-                assert np.count_nonzero(_filled_positions) == np.count_nonzero(_moved_positions), f"{segments}, {_segments}"
+                assert np.count_nonzero(_filled_positions) == np.count_nonzero(_moved_positions), f"{segments}, {_segments}, {mask}"
 
                 # Compute the set of background indices
                 background_imgs = images[np.where(~_moved_positions)[0]]
