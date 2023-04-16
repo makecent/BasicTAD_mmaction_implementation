@@ -35,11 +35,11 @@ class RandSlideAug(BaseTransform):
         images = np.arange(total_frames)
         rearranged_images = np.empty(total_frames, dtype=int)
         filled_positions = np.zeros(total_frames, dtype=bool)
-        fixed_positions = np.zeros(total_frames, dtype=bool)
+        moved_positions = np.zeros(total_frames, dtype=bool)
 
         # Initialize rearranged_images and filled_positions with non-moving segments
         for i, (start, end) in enumerate(segments_):
-            fixed_positions[start:end + 1] = True
+            moved_positions[start:end + 1] = True   # non-moving segments are treated as moved with zero offset.
             if not mask[i]:
                 rearranged_images[start:end + 1] = images[start:end + 1]
                 filled_positions[start:end + 1] = True
@@ -49,18 +49,17 @@ class RandSlideAug(BaseTransform):
             _rearranged_images = rearranged_images.copy()
             _filled_positions = filled_positions.copy()
             _segments = segments_.copy()
-            _fixed_positions = fixed_positions.copy()
-            saved_string1, saved_string2 = 'no', 'no'
+            _moved_positions = moved_positions.copy()
             try:
                 for i, (start, end) in enumerate(segments_):
                     if mask[i]:  # Only slide segments with mask=True
                         print(f"\n moving {i}-th segment [{start}, {end}] ...")
-                        _fixed_positions[start: end + 1] = False
+                        _moved_positions[start: end + 1] = False
                         segment_length = end - start + 1
 
                         # Extend the segment by the extra factor
-                        extended_start = max(0, int(start - segment_length * self.extra))
-                        extended_end = min(total_frames - 1, int(end + segment_length * self.extra))
+                        extended_start = max(0, start - int(segment_length * self.extra))
+                        extended_end = min(total_frames - 1, end + int(segment_length * self.extra))
                         print(f"extended to [{extended_start}, {extended_end}] ...")
 
                         # Create a boolean array representing the positions of the extended segment
@@ -68,7 +67,7 @@ class RandSlideAug(BaseTransform):
                         extended_indices[extended_start:extended_end + 1] = True
 
                         # Perform an element-wise AND operation to find intersections
-                        intersection = np.logical_and(fixed_positions, extended_indices)
+                        intersection = np.logical_and(_moved_positions, extended_indices)
 
                         # Clip the extended segment by checking the first and last intersections
                         if np.any(intersection):
@@ -80,7 +79,7 @@ class RandSlideAug(BaseTransform):
                         # If the extended segment is entirely contained within the fixed_positions, skip this segment
                         if extended_start > extended_end:
                             # print(f"\n already inside a extension of previous segment")
-                            _fixed_positions[start: end + 1] = True
+                            _moved_positions[start: end + 1] = True
                             _segments[i] = [start, end]
                             continue
                         extended_length = extended_end - extended_start + 1
@@ -104,21 +103,13 @@ class RandSlideAug(BaseTransform):
 
                         # Update the filled and fixed positions
                         assert new_end - new_start == extended_end - extended_start
-                        # assert np.count_nonzero(_filled_positions) == np.count_nonzero(_fixed_positions), f"{_filled_positions[new_start:new_end+1].any()}, " \
-                        #                                                                 f"{_fixed_positions[extended_start:extended_end+1].any()} "
-                        saved_string1 = f"{np.count_nonzero(_filled_positions)}, {np.count_nonzero(_fixed_positions)}"
                         _filled_positions[new_start:new_end + 1] = True
-                        _fixed_positions[extended_start:extended_end + 1] = True
-                        saved_string2 = f"{np.count_nonzero(_filled_positions)}, {np.count_nonzero(_fixed_positions)}"
+                        _moved_positions[extended_start:extended_end + 1] = True
 
-                # if saved_string1 == 'no':
-                #     print(f"equal segments: {(segments_ == _segments).all()}")
-                #     print('')
+
+
                 # Compute the set of background indices
-                background_imgs = images[np.where(~_fixed_positions)[0]]
-
-                assert len(background_imgs) == len(_rearranged_images[np.where(~_filled_positions)[0]]), f"{_segments}, {segments_}"
-
+                background_imgs = images[np.where(~_moved_positions)[0]]
                 # Fill in the remaining gaps in the rearranged_images array
                 _rearranged_images[np.where(~_filled_positions)[0]] = background_imgs
                 break  # successful rearrangement, exit the loop
