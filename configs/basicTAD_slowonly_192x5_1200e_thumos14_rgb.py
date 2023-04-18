@@ -29,7 +29,7 @@ img_shape_test = (128, 128)
 
 train_pipeline = [
     dict(type='Time2Frame'),
-    dict(type='RandSlideAug'),
+    # dict(type='RandSlideAug'),
     dict(type='TemporalRandomCrop',
          clip_len=clip_len,
          frame_interval=frame_interval,
