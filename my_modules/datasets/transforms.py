@@ -58,9 +58,12 @@ class RandSlideAug(BaseTransform):
                         segment_length = end - start + 1
 
                         # Extend the segment by the extra factor
-                        extended_start = max(0, start - int(segment_length * self.extra))
-                        extended_end = min(total_frames - 1, end + int(segment_length * self.extra))
-                        # print(f"extended to [{extended_start}, {extended_end}] ...")
+                        extended_start_min = max(0, start - int(segment_length * self.extra))
+                        extended_start_max = start
+                        extended_start = np.random.randint(extended_start_min, extended_start_max + 1)
+                        extended_end_min = end
+                        extended_end_max = min(total_frames - 1, end + int(segment_length * self.extra))
+                        extended_end = np.random.randint(extended_end_min, extended_end_max + 1)
 
                         # Create a boolean array representing the positions of the extended segment
                         extended_indices = np.zeros(total_frames, dtype=bool)
