@@ -43,8 +43,34 @@ model = dict(
         format_shape='NCTHW'))
 
 clip_len = 96
+frame_interval = 10
+img_shape = (112, 112)
 img_shape_test = (112, 112)
 
+train_pipeline = [
+    dict(type='Time2Frame'),
+    dict(type='RandSlideAug'),
+    dict(type='TemporalRandomCrop',
+         clip_len=clip_len,
+         frame_interval=frame_interval,
+         iof_th=0.75),
+    dict(type='RawFrameDecode'),
+    dict(type='Resize', scale=(128, -1), keep_ratio=True),  # scale images' short-side to 128, keep aspect ratio
+    dict(type='SpatialRandomCrop', crop_size=img_shape),
+    dict(type='Flip', flip_ratio=0.5),
+    dict(type='PhotoMetricDistortion',
+         brightness_delta=32,
+         contrast_range=(0.5, 1.5),
+         saturation_range=(0.5, 1.5),
+         hue_delta=18,
+         p=0.5),
+    dict(type='Rotate',
+         limit=(-45, 45),
+         border_mode='reflect_101',
+         p=0.5),
+    dict(type='Pad', size=(clip_len, *img_shape)),
+    dict(type='FormatShape', input_format='NCTHW'),
+    dict(type='MyPackInputs')]
 val_pipeline = [
     dict(type='Time2Frame'),
     dict(type='RawFrameDecode'),
@@ -54,9 +80,9 @@ val_pipeline = [
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='MyPackInputs')
 ]
-val_dataloader = dict( dataset=dict(pipeline=val_pipeline))
+val_dataloader = dict(dataset=dict(pipeline=val_pipeline))
 test_dataloader = val_dataloader
-train_dataloader = dict(batch_size=2)
+train_dataloader = dict(dataset=dict(pipeline=train_pipeline), batch_size=2)
 
 # optimizer settings
 train_cfg = dict(max_epochs=1000)
@@ -85,3 +111,4 @@ optim_wrapper = dict(
         betas=(0.9, 0.999),
         weight_decay=0.05),
     clip_grad=dict(max_norm=40, norm_type=2))
+# compile=True
