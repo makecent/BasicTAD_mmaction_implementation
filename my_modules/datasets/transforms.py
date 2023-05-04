@@ -24,9 +24,12 @@ class RandSlideAug(BaseTransform):
         self.p = p
         self.extra = extra
 
-    def slide_and_rearrange_segments(self, segments, total_frames, max_attempts=88):
+    def slide_and_rearrange_segments(self, segments, total_frames, ignore_flags=None, max_attempts=88):
         segments = np.round(segments).astype(int)
         mask = np.random.choice([True, False], size=segments.shape[0], p=[self.p, 1 - self.p])
+
+        if ignore_flags:
+            mask[ignore_flags == 1] = False
 
         iou = segment_overlaps(segments, segments, mode='iou', detect_overlap_edge=True)
         np.fill_diagonal(iou, 0)
@@ -138,7 +141,9 @@ class RandSlideAug(BaseTransform):
     def transform(self, results: Dict):
         if random.uniform(0, 1) <= self.p:
             try:
-                segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'], results['total_frames'])
+                segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'],
+                                                                              total_frames=results['total_frames'],
+                                                                              ignore_flags=results['ignore_flags'])
             except RuntimeError:
                 pass
             else:
