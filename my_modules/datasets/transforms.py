@@ -28,7 +28,7 @@ class RandSlideAug(BaseTransform):
         segments = np.round(segments).astype(int)
         mask = np.random.choice([True, False], size=segments.shape[0], p=[self.p, 1 - self.p])
 
-        if ignore_flags:
+        if ignore_flags is not None:
             mask[ignore_flags == 1] = False
 
         iou = segment_overlaps(segments, segments, mode='iou', detect_overlap_edge=True)
@@ -139,18 +139,18 @@ class RandSlideAug(BaseTransform):
         return _segments, _rearranged_images
 
     def transform(self, results: Dict):
-        if random.uniform(0, 1) <= self.p:
-            try:
-                segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'],
-                                                                              total_frames=results['total_frames'],
-                                                                              ignore_flags=results['ignore_flags'])
-            except RuntimeError:
-                pass
-            else:
-                results['segments_ori'] = results['segments']
-                results['segments'] = segments.astype(np.float32)
-                results['img_idx_mapping'] = img_idx_mapping
-                assert np.array(segments).max() < results['total_frames']
+        # if random.uniform(0, 1) <= self.p:
+        try:
+            segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'],
+                                                                          total_frames=results['total_frames'],
+                                                                          ignore_flags=results['ignore_flags'])
+        except RuntimeError:
+            pass
+        else:
+            results['segments_ori'] = results['segments']
+            results['segments'] = segments.astype(np.float32)
+            results['img_idx_mapping'] = img_idx_mapping
+            assert np.array(segments).max() < results['total_frames']
         return results
 
 
