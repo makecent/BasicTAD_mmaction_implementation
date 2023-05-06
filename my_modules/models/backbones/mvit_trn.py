@@ -20,4 +20,4 @@ class MViT_TRN(MViT):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for block in self.blocks:
-            block.mlp.act = torch.nn.ModuleList([TRN(), torch.nn.GELU()])
+            block.mlp.act = torch.nn.Sequential(TRN(), torch.nn.GELU())
