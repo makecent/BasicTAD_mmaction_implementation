@@ -3,7 +3,7 @@ _base_ = ['./basicTAD_slowonly_96x10_1200e_thumos14_rgb.py']
 # model settings
 model = dict(
     backbone=dict(
-        type='MViT',
+        type='MViT_TRN',
         arch='small',
         drop_path_rate=0.2,
         spatial_size=112,

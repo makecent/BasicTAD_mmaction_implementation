@@ -1,10 +1,9 @@
 import torch
 from mmaction.registry import MODELS
-from mmengine.model import BaseModule
+from .mvit import MViT
 
 
-@MODELS.register_module()
-class TRN(BaseModule):
+class TRN(torch.nn.Module):
 
     def __init__(self):
         super().__init__()
@@ -16,4 +15,9 @@ class TRN(BaseModule):
         alpha = l2 / l2.sum(dim=-1, keepdim=True)
         out = self.gamma * alpha.unsqueeze(-1).unsqueeze(-1) * x + self.beta + x
         return out
-
+@MODELS.register_module()
+class MViT_TRN(MViT):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for block in self.blocks:
+            block.mlp.act = torch.nn.ModuleList([TRN(), torch.nn.GELU()])
