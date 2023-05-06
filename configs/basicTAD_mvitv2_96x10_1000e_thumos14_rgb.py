@@ -18,6 +18,7 @@ model = dict(
         )
     ),
     neck=[
+        dict(type='TRN'),
         dict(
             type='VDM',
             in_channels=768,
@@ -49,7 +50,7 @@ img_shape_test = (112, 112)
 
 train_pipeline = [
     dict(type='Time2Frame'),
-    dict(type='RandSlideAug'),
+    # dict(type='RandSlideAug'),
     dict(type='TemporalRandomCrop',
          clip_len=clip_len,
          frame_interval=frame_interval,
