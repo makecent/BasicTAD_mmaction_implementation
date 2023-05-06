@@ -11,10 +11,12 @@ class TRN(torch.nn.Module):
         self.beta = torch.nn.parameter.Parameter(torch.tensor(0.), requires_grad=True)
 
     def forward(self, x):
-        l2 = torch.linalg.norm(x, ord=2, dim=(-1, -2))
+        l2 = x.norm(p=2, dim=(-1, -2), keepdim=True)
         alpha = l2 / l2.sum(dim=-1, keepdim=True)
-        out = self.gamma * alpha.unsqueeze(-1).unsqueeze(-1) * x + self.beta + x
+        out = self.gamma * alpha * x + self.beta + x
         return out
+
+
 @MODELS.register_module()
 class MViT_TRN(MViT):
     def __init__(self, *args, **kwargs):

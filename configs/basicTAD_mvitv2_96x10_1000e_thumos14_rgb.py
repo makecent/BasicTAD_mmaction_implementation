@@ -21,7 +21,7 @@ model = dict(
         dict(
             type='VDM',
             in_channels=768,
-            out_channels=768,
+            out_channels=256,
             conv_cfg=dict(type='Conv3d'),
             norm_cfg=dict(type='SyncBN'),
             kernel_sizes=(3, 1, 1),
@@ -31,7 +31,7 @@ model = dict(
             out_indices=(0, 1, 2, 3, 4),
             out_pooling=True),
         dict(type='mmdet.FPN',
-             in_channels=[768] * 5,
+             in_channels=[768, 256, 256, 256, 256],
              out_channels=256,
              num_outs=5,
              conv_cfg=dict(type='Conv1d'),
@@ -110,5 +110,5 @@ optim_wrapper = dict(
         lr=1e-4,
         betas=(0.9, 0.999),
         weight_decay=0.05),
-    clip_grad=dict(max_norm=40, norm_type=2))
+    clip_grad=dict(max_norm=1, norm_type=2))
 # compile=True
