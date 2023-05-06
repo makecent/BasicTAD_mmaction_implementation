@@ -18,7 +18,6 @@ model = dict(
         )
     ),
     neck=[
-        dict(type='TRN'),
         dict(
             type='VDM',
             in_channels=768,
