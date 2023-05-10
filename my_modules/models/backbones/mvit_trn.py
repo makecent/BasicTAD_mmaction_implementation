@@ -523,7 +523,7 @@ class MultiScaleBlock(BaseModule):
         else:
             self.pool_skip = None
             self.init_out_size = input_size
-        self.trn = TRN(t_size=12)
+        self.trn = TRN(t_size=96)
 
     def forward(self, x: torch.Tensor, in_size: Tuple[int]) -> tuple:
         x_norm = self.norm1(x)
