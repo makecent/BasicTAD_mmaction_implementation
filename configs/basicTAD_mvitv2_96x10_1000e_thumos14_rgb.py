@@ -3,7 +3,7 @@ _base_ = ['./basicTAD_slowonly_96x10_1200e_thumos14_rgb.py']
 # model settings
 model = dict(
     backbone=dict(
-        type='MViT_TRN',
+        type='MViT',
         arch='small',
         drop_path_rate=0.2,
         spatial_size=112,
@@ -21,7 +21,7 @@ model = dict(
         dict(
             type='VDM',
             in_channels=768,
-            out_channels=256,
+            out_channels=768,
             conv_cfg=dict(type='Conv3d'),
             norm_cfg=dict(type='SyncBN'),
             kernel_sizes=(3, 1, 1),
@@ -31,7 +31,7 @@ model = dict(
             out_indices=(0, 1, 2, 3, 4),
             out_pooling=True),
         dict(type='mmdet.FPN',
-             in_channels=[768, 256, 256, 256, 256],
+             in_channels=[768] * 5,
              out_channels=256,
              num_outs=5,
              conv_cfg=dict(type='Conv1d'),
