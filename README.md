@@ -1,4 +1,4 @@
-This is an un-official implementation of the [BasicTAD](https://github.com/MCG-NJU/BasicTAD) based on OpenMMlab repos (mmaction2).
+This is an un-official implementation of the [BasicTAD](https://github.com/MCG-NJU/BasicTAD) based on OpenMMlab repos (mmaction2 and mmdetection).
 
 
 # Prepare dataset
