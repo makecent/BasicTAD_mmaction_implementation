@@ -27,14 +27,15 @@ model = dict(type='mmdet.SingleStageDetector',
                  conv_cfg=dict(type='Conv1d'),
                  norm_cfg=dict(type='SyncBN'),
                  anchor_generator=dict(
-                     type='Anchor1DGenerator',
+                     type='mmdet.AnchorGenerator',
                      octave_base_scale=2,
                      scales_per_octave=5,
+                     ratios=[1.0],
                      strides=[1, 2, 4, 8, 16]),
                  bbox_coder=dict(
-                     type='DeltaSegmentCoder',
-                     target_means=[.0, .0],
-                     target_stds=[1.0, 1.0]),
+                     type='mmdet.DeltaXYWHBBoxCoder',
+                     target_means=[.0, .0, .0, .0],
+                     target_stds=[1.0, 1.0, 1.0, 1.0]),
                  reg_decoded_bbox=True,
                  loss_cls=dict(type='mmdet.FocalLoss', use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0),
                  loss_bbox=dict(type='DIoU1DLoss', loss_weight=1.0),
@@ -60,14 +61,14 @@ model = dict(type='mmdet.SingleStageDetector',
                      min_pos_iou=0,
                      ignore_iof_thr=-1,
                      ignore_wrt_candidates=True,
-                     iou_calculator=dict(type='SegmentOverlaps')),
+                     iou_calculator=dict(type='BboxOverlaps1D')),
                  allowed_border=-1,
                  pos_weight=-1,
                  debug=False),
-             test_cfg=dict(nms_pre=300, score_thr=0.005))
+             test_cfg=dict(nms_pre=300, score_thr=0.005))  # we perform NMS in Metric rather than in the model
 
 # dataset settings
-data_root = 'my_data/thumos14'  # Root path to data for training
+data_root = 'data/thumos14'  # Root path to data for training
 data_prefix_train = 'rawframes/val'  # path to data for training
 data_prefix_val = 'rawframes/test'  # path to data for validation and testing
 ann_file_train = 'annotations/basicTAD/val.json'  # Path to the annotation file for training
@@ -102,15 +103,17 @@ train_pipeline = [
          p=0.5),
     dict(type='Pad', size=(clip_len, *img_shape)),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='MyPackInputs')]
+    dict(type='PackTadInputs',
+         meta_keys=('img_id', 'img_shape', 'pad_shape', 'scale_factor',))
+]
 val_pipeline = [
-    dict(type='Time2Frame'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(128, -1), keep_ratio=True),
     dict(type='SpatialCenterCrop', crop_size=img_shape_test),
     dict(type='Pad', size=(clip_len, *img_shape_test)),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='MyPackInputs')
+    dict(type='PackTadInputs',
+         meta_keys=('img_id', 'img_shape', 'scale_factor', 'offset_sec'))
 ]
 # test_pipeline = val_pipeline
 
@@ -128,7 +131,7 @@ train_dataloader = dict(  # Config of train dataloader
         data_prefix=dict(imgs=data_prefix_train),  # Prefix of specific data, e.g., frames and ann_file
         pipeline=train_pipeline))
 val_dataloader = dict(  # Config of validation dataloader
-    batch_size=2,  # Batch size of each single GPU during validation
+    batch_size=1,  # Batch size of each single GPU during validation
     num_workers=6,  # Workers to pre-fetch data for each single GPU during validation
     persistent_workers=True,  # If `True`, the dataloader will not shut down the worker processes after an epoch end
     sampler=dict(type='DefaultSampler', shuffle=False),  # Not shuffle during validation and testing
@@ -145,7 +148,10 @@ val_dataloader = dict(  # Config of validation dataloader
 test_dataloader = val_dataloader
 
 # evaluation settings
-val_evaluator = dict(type='mAP')  # My customized evaluator for mean average precision
+val_evaluator = dict(  # Customized evaluator for mean average precision (mAP)
+    type='BasicTADMetric',
+    iou_thrs=[0.3, 0.4, 0.5, 0.6, 0.7],
+    nms_cfg=dict(type='nmw', iou_thr=0.6))
 test_evaluator = val_evaluator  # Config of testing evaluator
 
 train_cfg = dict(  # Config of training loop
@@ -190,7 +196,7 @@ auto_scale_lr = dict(enable=False, base_batch_size=16)  # The lr=0.01 is for bat
 
 # runtime settings
 # imports
-custom_imports = dict(imports=['my_modules'], allow_failed_imports=False)
+custom_imports = dict(imports=['models'], allow_failed_imports=False)
 default_scope = 'mmaction'  # The default registry scope to find modules. Refer to https://mmengine.readthedocs.io/en/latest/tutorials/registry.html
 default_hooks = dict(  # Hooks to execute default actions like updating model parameters and saving checkpoints.
     runtime_info=dict(type='RuntimeInfoHook'),  # The hook to updates runtime information into message hub
@@ -205,7 +211,7 @@ default_hooks = dict(  # Hooks to execute default actions like updating model pa
         type='CheckpointHook',  # The hook to save checkpoints periodically
         interval=100,  # The saving period
         save_best='auto',  # Specified metric to mearsure the best checkpoint during evaluation
-        max_keep_ckpts=10),  # The maximum checkpoints to keep
+        max_keep_ckpts=12),  # The maximum checkpoints to keep
     sampler_seed=dict(type='DistSamplerSeedHook'),  # Data-loading sampler for distributed training
     sync_buffers=dict(type='SyncBuffersHook'))  # Synchronize model buffers at the end of each epoch
 env_cfg = dict(  # Dict for setting environment

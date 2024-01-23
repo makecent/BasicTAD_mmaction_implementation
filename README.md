@@ -9,7 +9,7 @@ To use this repository, the user first need extract raw frames of THUMOS14. You 
 conda create -n mmengine python=3.8 -y
 conda activate mmengine
 # the version of pytorch is flexible (>=2.0 is recommended), you may install pytorch depending on your machine.
-conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia -y
 pip install -U openmim fvcore future tensorboard pytorchvideo
 mim install mmengine mmdet mmaction2
 ```

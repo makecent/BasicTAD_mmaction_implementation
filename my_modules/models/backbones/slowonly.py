@@ -1,6 +1,16 @@
 import torch
 import torch.nn as nn
+
 from mmaction.registry import MODELS
+
+
+def crops_to_batch(forward_methods):
+    def wrapper(self, inputs, *args, **kwargs):
+        num_crops = inputs.shape[1]
+        inputs = inputs.view(-1, *inputs.shape[2:])
+        return forward_methods(self, inputs, *args, **kwargs)
+
+    return wrapper
 
 
 @MODELS.register_module()
@@ -13,11 +23,12 @@ class SlowOnly(nn.Module):
                  ):
         super(SlowOnly, self).__init__()
         model = torch.hub.load("facebookresearch/pytorchvideo", model='slow_r50', pretrained=True)
-        self.blocks = model.blocks[:-1]     # exclude the last HEAD block
+        self.blocks = model.blocks[:-1]  # exclude the last HEAD block
         self.out_indices = out_indices
         self._freeze_bn = freeze_bn
         self._freeze_bn_affine = freeze_bn_affine
 
+    @crops_to_batch
     def forward(self, x):
         outs = []
         for i, block in enumerate(self.blocks):

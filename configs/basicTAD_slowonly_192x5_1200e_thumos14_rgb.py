@@ -29,7 +29,6 @@ img_shape_test = (128, 128)
 
 train_pipeline = [
     dict(type='Time2Frame'),
-    dict(type='RandSlideAug'),
     dict(type='TemporalRandomCrop',
          clip_len=clip_len,
          frame_interval=frame_interval,
@@ -50,16 +49,18 @@ train_pipeline = [
          p=0.5),
     dict(type='Pad', size=(clip_len, *img_shape)),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='MyPackInputs')]
+    dict(type='PackTadInputs',
+         meta_keys=('img_id', 'img_shape', 'pad_shape', 'scale_factor',))
+]
 
 val_pipeline = [
-    dict(type='Time2Frame'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(128, -1), keep_ratio=True),
     dict(type='SpatialCenterCrop', crop_size=img_shape_test),
     dict(type='Pad', size=(clip_len, *img_shape_test)),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='MyPackInputs')
+    dict(type='PackTadInputs',
+         meta_keys=('img_id', 'img_shape', 'scale_factor', 'offset_sec'))
 ]
 
 train_dataloader = dict(dataset=dict(pipeline=train_pipeline))

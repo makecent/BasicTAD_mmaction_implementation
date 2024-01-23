@@ -2,156 +2,18 @@
 # https://github.com/open-mmlab/mmcv or
 # https://github.com/open-mmlab/mmdetection
 
-from typing import Dict, Sequence
+from typing import Sequence
 
 import mmcv
 import numpy as np
-from mmaction.registry import TRANSFORMS
-from mmcv.transforms import BaseTransform, to_tensor
-from mmengine.structures import BaseDataElement, InstanceData
+from mmcv.transforms import to_tensor
+from mmcv.transforms.base import BaseTransform
+from mmdet.structures import DetDataSample
+from mmengine.structures import InstanceData
 from numpy import random
 
+from mmaction.registry import TRANSFORMS
 from ..models.task_modules.segments_ops import segment_overlaps
-from mmengine.logging import print_log
-
-# from mmcv.parallel import DataContainer as DC
-
-@TRANSFORMS.register_module()
-class RandSlideAug(BaseTransform):
-    """Randomly slide actions' temporal location for data augmentation"""
-
-    def __init__(self, p=0.5, extra=0.5):
-        self.p = p
-        self.extra = extra
-
-    def slide_and_rearrange_segments(self, segments, total_frames, ignore_flags=None, max_attempts=88):
-        segments = np.round(segments).astype(int)
-        mask = np.random.choice([True, False], size=segments.shape[0], p=[self.p, 1 - self.p])
-
-        if ignore_flags is not None:
-            mask[ignore_flags == 1] = False
-
-        iou = segment_overlaps(segments, segments, mode='iou', detect_overlap_edge=True)
-        np.fill_diagonal(iou, 0)
-        mask[iou.max(axis=-1) > 0] = False  # segments overlapped with each other will NOT be slided
-
-        images = np.arange(total_frames)
-        rearranged_images = np.empty(total_frames, dtype=int)
-        filled_positions = np.zeros(total_frames, dtype=bool)
-        moved_positions = np.zeros(total_frames, dtype=bool)
-
-        # Initialize rearranged_images and filled_positions with non-moving segments
-        for i, (start, end) in enumerate(segments):
-            moved_positions[start:end + 1] = True  # non-moving segments are treated as moved with zero offset.
-            if not mask[i]:
-                rearranged_images[start:end + 1] = images[start:end + 1]
-                filled_positions[start:end + 1] = True
-
-        attempt = 0
-        while attempt < max_attempts:
-            _rearranged_images = rearranged_images.copy()
-            _filled_positions = filled_positions.copy()
-            _segments = segments.copy()
-            _moved_positions = moved_positions.copy()
-            try:
-                for i, (start, end) in enumerate(segments):
-                    if mask[i]:  # Only slide segments with mask=True
-                        # print(f"\n moving {i}-th segment [{start}, {end}] ...")
-                        _moved_positions[start: end + 1] = False
-                        segment_length = end - start + 1
-
-                        # Extend the segment by the extra factor
-                        extended_start_min = max(0, start - int(segment_length * self.extra))
-                        extended_start_max = start
-                        extended_start = np.random.randint(extended_start_min, extended_start_max + 1)
-                        extended_end_min = end
-                        extended_end_max = min(total_frames - 1, end + int(segment_length * self.extra))
-                        extended_end = np.random.randint(extended_end_min, extended_end_max + 1)
-
-                        # Create a boolean array representing the positions of the extended segment
-                        extended_indices = np.zeros(total_frames, dtype=bool)
-                        extended_indices[extended_start:extended_end + 1] = True
-
-                        # Perform an element-wise AND operation to find intersections
-                        intersection = np.logical_and(_moved_positions, extended_indices)
-
-                        # Clip the extended segment by checking the first and last intersections
-                        if np.any(intersection):
-                            intersecting_indices = np.where(intersection)[0]
-
-                            # Find the closest intersection on the left and right side
-                            left_intersection = intersecting_indices[intersecting_indices < start]
-                            right_intersection = intersecting_indices[intersecting_indices > end]
-
-                            if left_intersection.size > 0:
-                                extended_start = min(start, left_intersection[-1] + 1)
-
-                            if right_intersection.size > 0:
-                                extended_end = max(end, right_intersection[0] - 1)
-                            # print(f"clip the extended segments to [{extended_start}, {extended_end}] ...")
-
-                        # If the extended segment is entirely contained within the fixed_positions, skip this segment
-                        extended_length = extended_end - extended_start + 1
-                        if extended_length < segment_length:
-                            raise ValueError(f"extended length {extended_length} should not be smaller than the original length {segment_length}")
-
-                        # Find all the possible start positions for the extended segment
-                        possible_starts = \
-                            np.where(np.convolve(~_filled_positions, np.ones(extended_length),
-                                                 mode='valid') == extended_length)[0]
-                        assert possible_starts.size > 0, "unable to put a segment without overlapping"
-                        # Select a random start position and update the new_segments list
-                        new_start = random.choice(possible_starts)
-                        new_end = new_start + extended_length - 1
-                        # print(f"moved to [{new_start}, {new_end}] ...")
-
-                        # Update the new_segments array to include only the original segment (excluding extra content)
-                        original_start = start + new_start - extended_start
-                        original_end = end + new_end - extended_end
-                        _segments[i] = [original_start, original_end]
-
-                        # Place the extended segment into the rearranged_images array
-                        _rearranged_images[new_start:new_end + 1] = images[extended_start:extended_end + 1]
-
-                        # Update the filled and fixed positions
-                        assert new_end - new_start == extended_end - extended_start
-                        _filled_positions[new_start:new_end + 1] = True
-                        _moved_positions[extended_start:extended_end + 1] = True
-
-                assert np.count_nonzero(_filled_positions) == np.count_nonzero(
-                    _moved_positions), f"{segments}, {_segments}, {mask}"
-
-                # Compute the set of background indices
-                background_imgs = images[np.where(~_moved_positions)[0]]
-                # Fill in the remaining gaps in the rearranged_images array
-                _rearranged_images[np.where(~_filled_positions)[0]] = background_imgs
-                break  # successful rearrangement, exit the loop
-
-            except AssertionError as e:
-                if str(e) == "unable to put a segment without overlapping":
-                    attempt += 1
-                    continue
-                else:
-                    raise e
-        if attempt == max_attempts:
-            raise RuntimeError("Failed to rearrange segments after {} attempts".format(max_attempts))
-
-        return _segments, _rearranged_images
-
-    def transform(self, results: Dict):
-        # if random.uniform(0, 1) <= self.p:
-        try:
-            segments, img_idx_mapping = self.slide_and_rearrange_segments(results['segments'],
-                                                                          total_frames=results['total_frames'],
-                                                                          ignore_flags=results['ignore_flags'])
-        except RuntimeError:
-            pass
-        else:
-            results['segments_ori'] = results['segments']
-            results['segments'] = segments.astype(np.float32)
-            results['img_idx_mapping'] = img_idx_mapping
-            assert np.array(segments).max() < results['total_frames']
-        return results
 
 
 @TRANSFORMS.register_module()
@@ -554,51 +416,92 @@ class Pad(BaseTransform):
 
 
 @TRANSFORMS.register_module()
-class MyPackInputs(BaseTransform):
-    mapping_table = {'segments': 'bboxes',
-                     'labels': 'labels'}
+class PackTadInputs(BaseTransform):
+    """Pack the inputs data for the detection / semantic segmentation /
+    panoptic segmentation.
 
-    def __init__(
-            self,
-            meta_keys: Sequence[str] = ('video_name', 'duration', 'total_frames', 'fps',
-                                        'tsize', 'pad_tsize', 'tshift', 'tscale_factor')
-    ) -> None:
+    The ``img_meta`` item is always populated.  The contents of the
+    ``img_meta`` dictionary depends on ``meta_keys``. By default this includes:
+
+        - ``img_id``: id of the image
+
+        - ``img_path``: path to the image file
+
+        - ``ori_shape``: original shape of the image as a tuple (h, w)
+
+        - ``img_shape``: shape of the image input to the network as a tuple \
+            (h, w).  Note that images may be zero padded on the \
+            bottom/right if the batch tensor is larger than this shape.
+
+        - ``scale_factor``: a float indicating the preprocessing scale
+
+        - ``flip``: a boolean indicating if image flip transform was used
+
+        - ``flip_direction``: the flipping direction
+
+    Args:
+        meta_keys (Sequence[str], optional): Meta keys to be converted to
+            ``mmcv.DataContainer`` and collected in ``data[img_metas]``.
+            Default: ``('img_id', 'img_path', 'ori_shape', 'img_shape',
+            'scale_factor', 'flip', 'flip_direction')``
+    """
+
+    def __init__(self,
+                 meta_keys=('img_id', 'img_shape', 'scale_factor')):
         self.meta_keys = meta_keys
 
-    def transform(self, results: Dict) -> Dict:
-        """The transform function of :class:`PackActionInputs`.
+    @staticmethod
+    def mmdet_mapping(results: dict) -> dict:
+        # Modify the meta keys/values to be consistent with mmdet
+        results['img'] = results['imgs']
+        results['img_shape'] = (1, results.pop('tsize'))
+        results['pad_shape'] = (1, results.pop('pad_tsize'))
+        if 'tscale_factor' in results:
+            results['scale_factor'] = (results.pop('tscale_factor'), 1)  # (w, h)
+        results['img_id'] = results.pop('video_name')
+
+        gt_bboxes = np.insert(results['segments'], 2, 0.9, axis=-1)
+        gt_bboxes = np.insert(gt_bboxes, 1, 0.1, axis=-1)
+        results['bboxes'] = gt_bboxes
+        results['labels'] = results.pop('labels')
+
+        return results
+
+    def transform(self, results: dict) -> dict:
+        """Method to pack the input data.
+
         Args:
-            results (dict): The result dict.
+            results (dict): Result dict from the data pipeline.
+
         Returns:
-            dict: The result dict.
+            dict:
+
+            - 'inputs' (obj:`torch.Tensor`): The forward data of models.
+            - 'data_sample' (obj:`DetDataSample`): The annotation info of the
+                sample.
         """
-
-        # Pack images
+        results = self.mmdet_mapping(results)
         packed_results = dict()
-        packed_results['inputs'] = to_tensor(results['imgs']).squeeze(dim=0)  # squeeze the `num_crops` dimension
 
-        data_sample = BaseDataElement()
+        img = results['img']
+        if not img.flags.c_contiguous:
+            img = to_tensor(np.ascontiguousarray(img))
+        else:
+            img = to_tensor(img).contiguous()
 
-        # Pack gt_segments and gt_labels
-        instance_data = InstanceData()
-        ignore_instance_data = InstanceData()
-        assert len(results['ignore_flags']) == len(results['segments']), \
-            f"There are {len(results['segments'])} segments, but {len(results['ignore_flags'])} flags"
-        valid_idx = np.where(results['ignore_flags'] == 0)[0]
-        ignore_idx = np.where(results['ignore_flags'] == 1)[0]
+        packed_results['inputs'] = img
 
-        for key in self.mapping_table.keys():
-            instance_data[self.mapping_table[key]] = to_tensor(results[key][valid_idx])
-            ignore_instance_data[self.mapping_table[key]] = to_tensor(results[key][ignore_idx])
+        data_sample = DetDataSample(gt_instances=InstanceData(bboxes=to_tensor(results['bboxes']),
+                                                              labels=to_tensor(results['labels'])))
+        img_meta = {}
+        for key in self.meta_keys:
+            assert key in results, f'`{key}` is not found in `results`, ' \
+                                   f'the valid keys are {list(results)}.'
+            img_meta[key] = results[key]
 
-        data_sample.gt_instances = instance_data
-        # The ignored ground truth currently are not used at all. Input it to the model just for consistency with mmdet.
-        data_sample.ignored_instances = ignore_instance_data
-
-        # Pack meta
-        img_meta = {k: results[k] for k in self.meta_keys if k in results}
         data_sample.set_metainfo(img_meta)
         packed_results['data_samples'] = data_sample
+
         return packed_results
 
     def __repr__(self) -> str:
